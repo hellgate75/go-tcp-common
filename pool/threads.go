@@ -3,7 +3,7 @@ package pool
 import (
 	"errors"
 	"fmt"
-	"github.com/hellgate75/go-ycp-common/log"
+	"github.com/hellgate75/go-tcp-common/log"
 	"runtime"
 	"sync"
 	"time"
