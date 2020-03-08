@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gookit/color"
 	"io"
@@ -50,6 +51,11 @@ type Logger interface {
 	Success(in ...interface{})
 	Failuref(format string, in ...interface{})
 	Failure(in ...interface{})
+	IsAffiliated() bool
+	AffiliateTo(l Logger)
+	AffiliateLog(affiliateAppName string, level LogLevelValue, in ...interface{})
+	AffiliateLogf(affiliateAppName string, level LogLevelValue, format string, in ...interface{})
+	AffiliateWrite(affiliateAppName string, buff []byte)
 }
 
 type logger struct {
@@ -60,55 +66,127 @@ type logger struct {
 	flag      int        // properties
 	out       io.Writer  // destination for output
 	buf       []byte     // for accumulating text to write
+	logger	  *logger	// Main logger, for affiliated Sub-Loggers
+
+}
+
+func (logger *logger) IsAffiliated() bool {
+	return logger.logger != nil
+}
+
+
+func (logM *logger) AffiliateTo(l Logger) {
+	logM.logger = l.(*logger)
+}
+
+func (logger *logger) AffiliateLog(affiliateAppName string, level LogLevelValue, in ...interface{}) {
+	logger.logEvent(affiliateAppName, level, in...)
+}
+func (logger *logger) AffiliateLogf(affiliateAppName string, level LogLevelValue, format string, in ...interface{}) {
+	logger.logEvent(affiliateAppName, level, fmt.Sprintf(format, in...))
+}
+
+func (logger *logger) AffiliateWrite(affiliateAppName string, buff []byte) {
+	var buffer *bytes.Buffer = bytes.NewBuffer([]byte("[" + affiliateAppName +  "] "))
+	buffer.Write(buff)
+	logger.write(buffer.Bytes())
 
 }
 
 func (logger *logger) Tracef(format string, in ...interface{}) {
-	logger.log(traceLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
+	} else {
+		logger.log(traceLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Trace(in ...interface{}) {
-	logger.log(traceLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, traceLevel, in...)
+	} else {
+		logger.log(traceLevel, in...)
+	}
 }
 
 func (logger *logger) Debugf(format string, in ...interface{}) {
-	logger.log(debugLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
+	} else {
+		logger.log(debugLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Debug(in ...interface{}) {
-	logger.log(debugLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, debugLevel, in...)
+	} else {
+		logger.log(debugLevel, in...)
+	}
 }
 
 func (logger *logger) Infof(format string, in ...interface{}) {
-	logger.log(infoLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
+	} else {
+		logger.log(infoLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Info(in ...interface{}) {
-	logger.log(infoLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, infoLevel, in...)
+	} else {
+		logger.log(infoLevel, in...)
+	}
 }
 
 func (logger *logger) Warnf(format string, in ...interface{}) {
-	logger.log(warningLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
+	} else {
+		logger.log(warningLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Warn(in ...interface{}) {
-	logger.log(warningLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, warningLevel, in...)
+	} else {
+		logger.log(warningLevel, in...)
+	}
 }
 
 func (logger *logger) Errorf(format string, in ...interface{}) {
-	logger.log(errorLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
+	} else {
+		logger.log(errorLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Error(in ...interface{}) {
-	logger.log(errorLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, errorLevel, in...)
+	} else {
+		logger.log(errorLevel, in...)
+	}
 }
 
 func (logger *logger) Fatalf(format string, in ...interface{}) {
-	logger.log(fatalLevel, fmt.Sprintf(format, in...))
+	if logger.IsAffiliated() {
+		logger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
+	} else {
+		logger.log(fatalLevel, fmt.Sprintf(format, in...))
+	}
 }
 
 func (logger *logger) Fatal(in ...interface{}) {
-	logger.log(fatalLevel, in...)
+	if logger.IsAffiliated() {
+		logger.AffiliateLog(logger.prefix, fatalLevel, in...)
+	} else {
+		logger.log(fatalLevel, in...)
+	}
 }
 
 func (logger *logger) Printf(format string, in ...interface{}) {
@@ -116,7 +194,11 @@ func (logger *logger) Printf(format string, in ...interface{}) {
 	if logger.onScreen {
 		color.LightWhite.Printf(string(buf))
 	} else {
-		logger.out.Write(buf)
+		if logger.IsAffiliated() {
+			logger.logger.AffiliateWrite(logger.prefix, buf)
+		} else {
+			logger.write(buf)
+		}
 	}
 }
 
@@ -125,7 +207,11 @@ func (logger *logger) Println(in ...interface{}) {
 	if logger.onScreen {
 		color.LightWhite.Printf(string(buf))
 	} else {
-		logger.out.Write(buf)
+		if logger.IsAffiliated() {
+			logger.logger.AffiliateWrite(logger.prefix, buf)
+		} else {
+			logger.write(buf)
+		}
 	}
 }
 
@@ -138,48 +224,71 @@ func (logger *logger) GetVerbosity() LogLevel {
 
 func (logger *logger) Successf(format string, in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprintf(format, in...) + "\n"
-	logger.output(color.Green, 2, itfs)
+	if logger.IsAffiliated() {
+		logger.logger.outputLogger(logger.prefix, color.Green, 2, itfs)
+	} else {
+		logger.output(color.Green, 2, itfs)
+	}
 }
 
 func (logger *logger) Success(in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprint(in...) + "\n"
-	logger.output(color.Green, 2, itfs)
+	if logger.IsAffiliated() {
+		logger.logger.outputLogger(logger.prefix, color.Green, 2, itfs)
+	} else {
+		logger.output(color.Green, 2, itfs)
+	}
 }
 
 func (logger *logger) Failuref(format string, in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprintf(format, in...) + "\n"
-	logger.output(color.Red, 2, itfs)
+	if logger.IsAffiliated() {
+		logger.logger.outputLogger(logger.prefix, color.Red, 2, itfs)
+	} else {
+		logger.output(color.Red, 2, itfs)
+	}
 }
 
 func (logger *logger) Failure(in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprint(in...) + "\n"
-	logger.output(color.Red, 2, itfs)
+	if logger.IsAffiliated() {
+		logger.logger.outputLogger(logger.prefix, color.Red, 2, itfs)
+	} else {
+		logger.output(color.Red, 2, itfs)
+	}
+}
+
+func (logger *logger) write(buff []byte) {
+	logger.out.Write(buff)
 }
 
 func (logger *logger) log(level LogLevelValue, in ...interface{}) {
+	logger.logEvent(logger.prefix, level, in...)
+}
+func (logger *logger) logEvent(appName string, level LogLevelValue, in ...interface{}) {
 	if level >= logger.verbosity {
 		var itfs string = " " + string(toVerbosityLevel(level)) + " " + fmt.Sprint(in...) + "\n"
 		switch string(toVerbosityLevel(level)) {
 		case "DEBUG":
-			logger.output(color.Yellow, 2, itfs)
+			logger.outputLogger(appName, color.Yellow, 2, itfs)
 			break
 		case "TRACE":
-			logger.output(color.Yellow, 2, itfs)
+			logger.outputLogger(appName, color.Yellow, 2, itfs)
 			break
 		case "WARN":
-			logger.output(color.LightYellow, 2, itfs)
+			logger.outputLogger(appName, color.LightYellow, 2, itfs)
 			break
 		case "INFO":
-			logger.output(color.LightWhite, 2, itfs)
+			logger.outputLogger(appName, color.LightWhite, 2, itfs)
 			break
 		case "ERROR":
-			logger.output(color.LightRed, 2, itfs)
+			logger.outputLogger(appName, color.LightRed, 2, itfs)
 			break
 		case "FATAL":
-			logger.output(color.Red, 2, itfs)
+			logger.outputLogger(appName, color.Red, 2, itfs)
 			break
 		default:
-			logger.output(color.White, 2, itfs)
+			logger.outputLogger(appName, color.White, 2, itfs)
 		}
 	}
 }
@@ -198,8 +307,8 @@ const (
 //   * l.prefix (if it's not blank),
 //   * date and/or time (if corresponding flags are provided),
 //   * file and line number (if corresponding flags are provided).
-func (l *logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
-	*buf = append(*buf, l.prefix...)
+func (l *logger) formatHeader(prefix string, buf *[]byte, t time.Time, file string, line int) {
+	*buf = append(*buf, prefix...)
 	if l.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
 		if l.flag&LUTC != 0 {
 			t = t.UTC()
@@ -246,6 +355,9 @@ func (l *logger) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 }
 
 func (logger *logger) output(color color.Color, calldepth int, s string) error {
+	return logger.outputLogger(logger.prefix, color, calldepth, s)
+}
+func (logger *logger) outputLogger(prefix string, color color.Color, calldepth int, s string) error {
 	now := time.Now() // get this early.
 	var file string
 	var line int
@@ -263,7 +375,7 @@ func (logger *logger) output(color color.Color, calldepth int, s string) error {
 		logger.mu.Lock()
 	}
 	logger.buf = logger.buf[:0]
-	logger.formatHeader(&logger.buf, now, file, line)
+	logger.formatHeader(prefix, &logger.buf, now, file, line)
 	logger.buf = append(logger.buf, s...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		logger.buf = append(logger.buf, '\n')
@@ -277,17 +389,7 @@ func (logger *logger) output(color color.Color, calldepth int, s string) error {
 	}
 }
 
-func NewLogger(verbosity LogLevel) Logger {
-	return &logger{
-		verbosity: toVerbosityLevelValue(verbosity),
-		onScreen:  true,
-		out:       os.Stdout,
-		prefix:    "[go-deploy] ",
-		flag:      LstdFlags | LUTC,
-	}
-}
-
-func NewAppLogger(appName string, verbosity LogLevel) Logger {
+func NewLogger(appName string, verbosity LogLevel) Logger {
 	return &logger{
 		verbosity: toVerbosityLevelValue(verbosity),
 		onScreen:  true,
