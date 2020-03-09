@@ -59,9 +59,9 @@ type Logger interface {
 }
 
 type logger struct {
+	sync.Mutex // ensures atomic writes; protects the following fields
 	verbosity       LogLevelValue
 	onScreen        bool
-	mu              sync.Mutex // ensures atomic writes; protects the following fields
 	prefix          string     // prefix on each line to identify the logger (but see Lmsgprefix)
 	flag            int        // properties
 	out             io.Writer  // destination for output
@@ -361,18 +361,18 @@ func (logger *logger) outputLogger(prefix string, color color.Color, calldepth i
 	now := time.Now() // get this early.
 	var file string
 	var line int
-	logger.mu.Lock()
-	defer logger.mu.Unlock()
+	logger.Lock()
+	defer logger.Unlock()
 	if logger.flag&(Lshortfile|Llongfile) != 0 {
 		// Release lock while getting caller info - it's expensive.
-		logger.mu.Unlock()
+		logger.Unlock()
 		var ok bool
 		_, file, line, ok = runtime.Caller(calldepth)
 		if !ok {
 			file = "???"
 			line = 0
 		}
-		logger.mu.Lock()
+		logger.Lock()
 	}
 	logger.buf = logger.buf[:0]
 	logger.formatHeader(prefix, &logger.buf, now, file, line)
@@ -396,6 +396,8 @@ func NewLogger(appName string, verbosity LogLevel) Logger {
 		out:       os.Stdout,
 		prefix:    "[" + appName + "] ",
 		flag:      LstdFlags | LUTC,
+		mainLogger: nil,
+		buf: []byte{},
 	}
 }
 
