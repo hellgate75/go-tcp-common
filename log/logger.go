@@ -70,225 +70,225 @@ type logger struct {
 
 }
 
-func (logger *logger) IsAffiliated() bool {
-	return logger.mainLogger != nil
+func (l *logger) IsAffiliated() bool {
+	return l.mainLogger != nil
 }
 
 
-func (logM *logger) AffiliateTo(l Logger) {
-	logM.mainLogger = l.(*logger)
+func (lg *logger) AffiliateTo(l Logger) {
+	lg.mainLogger = l.(*logger)
 }
 
-func (logger *logger) AffiliateLog(affiliateAppName string, level LogLevelValue, in ...interface{}) {
-	logger.logEvent(affiliateAppName, level, in...)
+func (l *logger) AffiliateLog(affiliateAppName string, level LogLevelValue, in ...interface{}) {
+	l.logEvent(affiliateAppName, level, in...)
 }
-func (logger *logger) AffiliateLogf(affiliateAppName string, level LogLevelValue, format string, in ...interface{}) {
-	logger.logEvent(affiliateAppName, level, fmt.Sprintf(format, in...))
+func (l *logger) AffiliateLogf(affiliateAppName string, level LogLevelValue, format string, in ...interface{}) {
+	l.logEvent(affiliateAppName, level, fmt.Sprintf(format, in...))
 }
 
-func (logger *logger) AffiliateWrite(affiliateAppName string, buff []byte) {
+func (l *logger) AffiliateWrite(affiliateAppName string, buff []byte) {
 	var buffer *bytes.Buffer = bytes.NewBuffer([]byte("[" + affiliateAppName +  "] "))
 	buffer.Write(buff)
-	logger.write(buffer.Bytes())
+	l.write(buffer.Bytes())
 
 }
 
-func (logger *logger) Tracef(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
+func (l *logger) Tracef(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, traceLevel, format, in...)
 	} else {
-		logger.log(traceLevel, fmt.Sprintf(format, in...))
+		l.log(traceLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Trace(in ...interface{}) {
-	if logger.mainLogger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, traceLevel, in...)
+func (l *logger) Trace(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, traceLevel, in...)
 	} else {
-		logger.log(traceLevel, in...)
+		l.log(traceLevel, in...)
 	}
 }
 
-func (logger *logger) Debugf(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
+func (l *logger) Debugf(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, debugLevel, format, in...)
 	} else {
-		logger.log(debugLevel, fmt.Sprintf(format, in...))
+		l.log(debugLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Debug(in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, debugLevel, in...)
+func (l *logger) Debug(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, debugLevel, in...)
 	} else {
-		logger.log(debugLevel, in...)
+		l.log(debugLevel, in...)
 	}
 }
 
-func (logger *logger) Infof(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
+func (l *logger) Infof(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, infoLevel, format, in...)
 	} else {
-		logger.log(infoLevel, fmt.Sprintf(format, in...))
+		l.log(infoLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Info(in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, infoLevel, in...)
+func (l *logger) Info(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, infoLevel, in...)
 	} else {
-		logger.log(infoLevel, in...)
+		l.log(infoLevel, in...)
 	}
 }
 
-func (logger *logger) Warnf(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
+func (l *logger) Warnf(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, warningLevel, format, in...)
 	} else {
-		logger.log(warningLevel, fmt.Sprintf(format, in...))
+		l.log(warningLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Warn(in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, warningLevel, in...)
+func (l *logger) Warn(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, warningLevel, in...)
 	} else {
-		logger.log(warningLevel, in...)
+		l.log(warningLevel, in...)
 	}
 }
 
-func (logger *logger) Errorf(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
+func (l *logger) Errorf(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, errorLevel, format, in...)
 	} else {
-		logger.log(errorLevel, fmt.Sprintf(format, in...))
+		l.log(errorLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Error(in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, errorLevel, in...)
+func (l *logger) Error(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, errorLevel, in...)
 	} else {
-		logger.log(errorLevel, in...)
+		l.log(errorLevel, in...)
 	}
 }
 
-func (logger *logger) Fatalf(format string, in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
+func (l *logger) Fatalf(format string, in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLogf(l.prefix, fatalLevel, format, in...)
 	} else {
-		logger.log(fatalLevel, fmt.Sprintf(format, in...))
+		l.log(fatalLevel, fmt.Sprintf(format, in...))
 	}
 }
 
-func (logger *logger) Fatal(in ...interface{}) {
-	if logger.IsAffiliated() {
-		logger.mainLogger.AffiliateLog(logger.prefix, fatalLevel, in...)
+func (l *logger) Fatal(in ...interface{}) {
+	if l.IsAffiliated() {
+		l.mainLogger.AffiliateLog(l.prefix, fatalLevel, in...)
 	} else {
-		logger.log(fatalLevel, in...)
+		l.log(fatalLevel, in...)
 	}
 }
 
-func (logger *logger) Printf(format string, in ...interface{}) {
+func (l *logger) Printf(format string, in ...interface{}) {
 	var buf []byte = []byte(fmt.Sprintf(format, in...))
-	if logger.onScreen {
+	if l.onScreen {
 		color.LightWhite.Printf(string(buf))
 	} else {
-		if logger.IsAffiliated() {
-			logger.mainLogger.AffiliateWrite(logger.prefix, buf)
+		if l.IsAffiliated() {
+			l.mainLogger.AffiliateWrite(l.prefix, buf)
 		} else {
-			logger.write(buf)
+			l.write(buf)
 		}
 	}
 }
 
-func (logger *logger) Println(in ...interface{}) {
+func (l *logger) Println(in ...interface{}) {
 	var buf []byte = []byte(fmt.Sprint(in...) + "\n")
-	if logger.onScreen {
+	if l.onScreen {
 		color.LightWhite.Printf(string(buf))
 	} else {
-		if logger.IsAffiliated() {
-			logger.mainLogger.AffiliateWrite(logger.prefix, buf)
+		if l.IsAffiliated() {
+			l.mainLogger.AffiliateWrite(l.prefix, buf)
 		} else {
-			logger.write(buf)
+			l.write(buf)
 		}
 	}
 }
 
-func (logger *logger) SetVerbosity(verbosity LogLevel) {
-	logger.verbosity = toVerbosityLevelValue(verbosity)
+func (l *logger) SetVerbosity(verbosity LogLevel) {
+	l.verbosity = toVerbosityLevelValue(verbosity)
 }
-func (logger *logger) GetVerbosity() LogLevel {
-	return toVerbosityLevel(logger.verbosity)
+func (l *logger) GetVerbosity() LogLevel {
+	return toVerbosityLevel(l.verbosity)
 }
 
-func (logger *logger) Successf(format string, in ...interface{}) {
+func (l *logger) Successf(format string, in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprintf(format, in...) + "\n"
-	if logger.IsAffiliated() {
-		logger.mainLogger.outputLogger(logger.prefix, color.Green, 2, itfs)
+	if l.IsAffiliated() {
+		l.mainLogger.outputLogger(l.prefix, color.Green, 2, itfs)
 	} else {
-		logger.output(color.Green, 2, itfs)
+		l.output(color.Green, 2, itfs)
 	}
 }
 
-func (logger *logger) Success(in ...interface{}) {
+func (l *logger) Success(in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprint(in...) + "\n"
-	if logger.IsAffiliated() {
-		logger.mainLogger.outputLogger(logger.prefix, color.Green, 2, itfs)
+	if l.IsAffiliated() {
+		l.mainLogger.outputLogger(l.prefix, color.Green, 2, itfs)
 	} else {
-		logger.output(color.Green, 2, itfs)
+		l.output(color.Green, 2, itfs)
 	}
 }
 
-func (logger *logger) Failuref(format string, in ...interface{}) {
+func (l *logger) Failuref(format string, in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprintf(format, in...) + "\n"
-	if logger.IsAffiliated() {
-		logger.mainLogger.outputLogger(logger.prefix, color.Red, 2, itfs)
+	if l.IsAffiliated() {
+		l.mainLogger.outputLogger(l.prefix, color.Red, 2, itfs)
 	} else {
-		logger.output(color.Red, 2, itfs)
+		l.output(color.Red, 2, itfs)
 	}
 }
 
-func (logger *logger) Failure(in ...interface{}) {
+func (l *logger) Failure(in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprint(in...) + "\n"
-	if logger.IsAffiliated() {
-		logger.mainLogger.outputLogger(logger.prefix, color.Red, 2, itfs)
+	if l.IsAffiliated() {
+		l.mainLogger.outputLogger(l.prefix, color.Red, 2, itfs)
 	} else {
-		logger.output(color.Red, 2, itfs)
+		l.output(color.Red, 2, itfs)
 	}
 }
 
-func (logger *logger) write(buff []byte) {
-	logger.out.Write(buff)
+func (l *logger) write(buff []byte) {
+	l.out.Write(buff)
 }
 
-func (logger *logger) log(level LogLevelValue, in ...interface{}) {
-	logger.logEvent(logger.prefix, level, in...)
+func (l *logger) log(level LogLevelValue, in ...interface{}) {
+	l.logEvent(l.prefix, level, in...)
 }
-func (logger *logger) logEvent(appName string, level LogLevelValue, in ...interface{}) {
-	if level >= logger.verbosity {
+func (l *logger) logEvent(appName string, level LogLevelValue, in ...interface{}) {
+	if level >= l.verbosity {
 		var itfs string = " " + string(toVerbosityLevel(level)) + " " + fmt.Sprint(in...) + "\n"
 		switch string(toVerbosityLevel(level)) {
 		case "DEBUG":
-			logger.outputLogger(appName, color.Yellow, 2, itfs)
+			l.outputLogger(appName, color.Yellow, 2, itfs)
 			break
 		case "TRACE":
-			logger.outputLogger(appName, color.Yellow, 2, itfs)
+			l.outputLogger(appName, color.Yellow, 2, itfs)
 			break
 		case "WARN":
-			logger.outputLogger(appName, color.LightYellow, 2, itfs)
+			l.outputLogger(appName, color.LightYellow, 2, itfs)
 			break
 		case "INFO":
-			logger.outputLogger(appName, color.LightWhite, 2, itfs)
+			l.outputLogger(appName, color.LightWhite, 2, itfs)
 			break
 		case "ERROR":
-			logger.outputLogger(appName, color.LightRed, 2, itfs)
+			l.outputLogger(appName, color.LightRed, 2, itfs)
 			break
 		case "FATAL":
-			logger.outputLogger(appName, color.Red, 2, itfs)
+			l.outputLogger(appName, color.Red, 2, itfs)
 			break
 		default:
-			logger.outputLogger(appName, color.White, 2, itfs)
+			l.outputLogger(appName, color.White, 2, itfs)
 		}
 	}
 }
@@ -354,37 +354,37 @@ func (l *logger) formatHeader(prefix string, buf *[]byte, t time.Time, file stri
 	}
 }
 
-func (logger *logger) output(color color.Color, calldepth int, s string) error {
-	return logger.outputLogger(logger.prefix, color, calldepth, s)
+func (l *logger) output(color color.Color, calldepth int, s string) error {
+	return l.outputLogger(l.prefix, color, calldepth, s)
 }
-func (logger *logger) outputLogger(prefix string, color color.Color, calldepth int, s string) error {
+func (l *logger) outputLogger(prefix string, color color.Color, calldepth int, s string) error {
 	now := time.Now() // get this early.
 	var file string
 	var line int
-	logger.Lock()
-	defer logger.Unlock()
-	if logger.flag&(Lshortfile|Llongfile) != 0 {
+	l.Lock()
+	defer l.Unlock()
+	if l.flag&(Lshortfile|Llongfile) != 0 {
 		// Release lock while getting caller info - it's expensive.
-		logger.Unlock()
+		l.Unlock()
 		var ok bool
 		_, file, line, ok = runtime.Caller(calldepth)
 		if !ok {
 			file = "???"
 			line = 0
 		}
-		logger.Lock()
+		l.Lock()
 	}
-	logger.buf = logger.buf[:0]
-	logger.formatHeader(prefix, &logger.buf, now, file, line)
-	logger.buf = append(logger.buf, s...)
+	l.buf = l.buf[:0]
+	l.formatHeader(prefix, &l.buf, now, file, line)
+	l.buf = append(l.buf, s...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
-		logger.buf = append(logger.buf, '\n')
+		l.buf = append(l.buf, '\n')
 	}
-	if logger.onScreen {
-		color.Printf(string(logger.buf))
+	if l.onScreen {
+		color.Printf(string(l.buf))
 		return nil
 	} else {
-		_, err := logger.out.Write(logger.buf)
+		_, err := l.out.Write(l.buf)
 		return err
 	}
 }
