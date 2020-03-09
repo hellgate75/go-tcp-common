@@ -95,14 +95,14 @@ func (logger *logger) AffiliateWrite(affiliateAppName string, buff []byte) {
 
 func (logger *logger) Tracef(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
 	} else {
 		logger.log(traceLevel, fmt.Sprintf(format, in...))
 	}
 }
 
 func (logger *logger) Trace(in ...interface{}) {
-	if logger.IsAffiliated() {
+	if logger.logger.IsAffiliated() {
 		logger.AffiliateLog(logger.prefix, traceLevel, in...)
 	} else {
 		logger.log(traceLevel, in...)
@@ -111,7 +111,7 @@ func (logger *logger) Trace(in ...interface{}) {
 
 func (logger *logger) Debugf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
 	} else {
 		logger.log(debugLevel, fmt.Sprintf(format, in...))
 	}
@@ -119,7 +119,7 @@ func (logger *logger) Debugf(format string, in ...interface{}) {
 
 func (logger *logger) Debug(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, debugLevel, in...)
+		logger.logger.AffiliateLog(logger.prefix, debugLevel, in...)
 	} else {
 		logger.log(debugLevel, in...)
 	}
@@ -127,7 +127,7 @@ func (logger *logger) Debug(in ...interface{}) {
 
 func (logger *logger) Infof(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
 	} else {
 		logger.log(infoLevel, fmt.Sprintf(format, in...))
 	}
@@ -135,7 +135,7 @@ func (logger *logger) Infof(format string, in ...interface{}) {
 
 func (logger *logger) Info(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, infoLevel, in...)
+		logger.logger.AffiliateLog(logger.prefix, infoLevel, in...)
 	} else {
 		logger.log(infoLevel, in...)
 	}
@@ -143,7 +143,7 @@ func (logger *logger) Info(in ...interface{}) {
 
 func (logger *logger) Warnf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
 	} else {
 		logger.log(warningLevel, fmt.Sprintf(format, in...))
 	}
@@ -151,7 +151,7 @@ func (logger *logger) Warnf(format string, in ...interface{}) {
 
 func (logger *logger) Warn(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, warningLevel, in...)
+		logger.logger.AffiliateLog(logger.prefix, warningLevel, in...)
 	} else {
 		logger.log(warningLevel, in...)
 	}
@@ -159,7 +159,7 @@ func (logger *logger) Warn(in ...interface{}) {
 
 func (logger *logger) Errorf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
 	} else {
 		logger.log(errorLevel, fmt.Sprintf(format, in...))
 	}
@@ -167,7 +167,7 @@ func (logger *logger) Errorf(format string, in ...interface{}) {
 
 func (logger *logger) Error(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, errorLevel, in...)
+		logger.logger.AffiliateLog(logger.prefix, errorLevel, in...)
 	} else {
 		logger.log(errorLevel, in...)
 	}
@@ -175,7 +175,7 @@ func (logger *logger) Error(in ...interface{}) {
 
 func (logger *logger) Fatalf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
+		logger.logger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
 	} else {
 		logger.log(fatalLevel, fmt.Sprintf(format, in...))
 	}
@@ -183,7 +183,7 @@ func (logger *logger) Fatalf(format string, in ...interface{}) {
 
 func (logger *logger) Fatal(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, fatalLevel, in...)
+		logger.logger.AffiliateLog(logger.prefix, fatalLevel, in...)
 	} else {
 		logger.log(fatalLevel, in...)
 	}
