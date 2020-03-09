@@ -59,24 +59,24 @@ type Logger interface {
 }
 
 type logger struct {
-	verbosity LogLevelValue
-	onScreen  bool
-	mu        sync.Mutex // ensures atomic writes; protects the following fields
-	prefix    string     // prefix on each line to identify the logger (but see Lmsgprefix)
-	flag      int        // properties
-	out       io.Writer  // destination for output
-	buf       []byte     // for accumulating text to write
-	logger	  *logger	// Main logger, for affiliated Sub-Loggers
+	verbosity       LogLevelValue
+	onScreen        bool
+	mu              sync.Mutex // ensures atomic writes; protects the following fields
+	prefix          string     // prefix on each line to identify the logger (but see Lmsgprefix)
+	flag            int        // properties
+	out             io.Writer  // destination for output
+	buf             []byte     // for accumulating text to write
+	mainLogger	    *logger	// Main logger, for affiliated Sub-Loggers
 
 }
 
 func (logger *logger) IsAffiliated() bool {
-	return logger.logger != nil
+	return logger.mainLogger != nil
 }
 
 
 func (logM *logger) AffiliateTo(l Logger) {
-	logM.logger = l.(*logger)
+	logM.mainLogger = l.(*logger)
 }
 
 func (logger *logger) AffiliateLog(affiliateAppName string, level LogLevelValue, in ...interface{}) {
@@ -95,15 +95,15 @@ func (logger *logger) AffiliateWrite(affiliateAppName string, buff []byte) {
 
 func (logger *logger) Tracef(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, traceLevel, format, in...)
 	} else {
 		logger.log(traceLevel, fmt.Sprintf(format, in...))
 	}
 }
 
 func (logger *logger) Trace(in ...interface{}) {
-	if logger.logger.IsAffiliated() {
-		logger.AffiliateLog(logger.prefix, traceLevel, in...)
+	if logger.mainLogger.IsAffiliated() {
+		logger.mainLogger.AffiliateLog(logger.prefix, traceLevel, in...)
 	} else {
 		logger.log(traceLevel, in...)
 	}
@@ -111,7 +111,7 @@ func (logger *logger) Trace(in ...interface{}) {
 
 func (logger *logger) Debugf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, debugLevel, format, in...)
 	} else {
 		logger.log(debugLevel, fmt.Sprintf(format, in...))
 	}
@@ -119,7 +119,7 @@ func (logger *logger) Debugf(format string, in ...interface{}) {
 
 func (logger *logger) Debug(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLog(logger.prefix, debugLevel, in...)
+		logger.mainLogger.AffiliateLog(logger.prefix, debugLevel, in...)
 	} else {
 		logger.log(debugLevel, in...)
 	}
@@ -127,7 +127,7 @@ func (logger *logger) Debug(in ...interface{}) {
 
 func (logger *logger) Infof(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, infoLevel, format, in...)
 	} else {
 		logger.log(infoLevel, fmt.Sprintf(format, in...))
 	}
@@ -135,7 +135,7 @@ func (logger *logger) Infof(format string, in ...interface{}) {
 
 func (logger *logger) Info(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLog(logger.prefix, infoLevel, in...)
+		logger.mainLogger.AffiliateLog(logger.prefix, infoLevel, in...)
 	} else {
 		logger.log(infoLevel, in...)
 	}
@@ -143,7 +143,7 @@ func (logger *logger) Info(in ...interface{}) {
 
 func (logger *logger) Warnf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, warningLevel, format, in...)
 	} else {
 		logger.log(warningLevel, fmt.Sprintf(format, in...))
 	}
@@ -151,7 +151,7 @@ func (logger *logger) Warnf(format string, in ...interface{}) {
 
 func (logger *logger) Warn(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLog(logger.prefix, warningLevel, in...)
+		logger.mainLogger.AffiliateLog(logger.prefix, warningLevel, in...)
 	} else {
 		logger.log(warningLevel, in...)
 	}
@@ -159,7 +159,7 @@ func (logger *logger) Warn(in ...interface{}) {
 
 func (logger *logger) Errorf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, errorLevel, format, in...)
 	} else {
 		logger.log(errorLevel, fmt.Sprintf(format, in...))
 	}
@@ -167,7 +167,7 @@ func (logger *logger) Errorf(format string, in ...interface{}) {
 
 func (logger *logger) Error(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLog(logger.prefix, errorLevel, in...)
+		logger.mainLogger.AffiliateLog(logger.prefix, errorLevel, in...)
 	} else {
 		logger.log(errorLevel, in...)
 	}
@@ -175,7 +175,7 @@ func (logger *logger) Error(in ...interface{}) {
 
 func (logger *logger) Fatalf(format string, in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
+		logger.mainLogger.AffiliateLogf(logger.prefix, fatalLevel, format, in...)
 	} else {
 		logger.log(fatalLevel, fmt.Sprintf(format, in...))
 	}
@@ -183,7 +183,7 @@ func (logger *logger) Fatalf(format string, in ...interface{}) {
 
 func (logger *logger) Fatal(in ...interface{}) {
 	if logger.IsAffiliated() {
-		logger.logger.AffiliateLog(logger.prefix, fatalLevel, in...)
+		logger.mainLogger.AffiliateLog(logger.prefix, fatalLevel, in...)
 	} else {
 		logger.log(fatalLevel, in...)
 	}
@@ -195,7 +195,7 @@ func (logger *logger) Printf(format string, in ...interface{}) {
 		color.LightWhite.Printf(string(buf))
 	} else {
 		if logger.IsAffiliated() {
-			logger.logger.AffiliateWrite(logger.prefix, buf)
+			logger.mainLogger.AffiliateWrite(logger.prefix, buf)
 		} else {
 			logger.write(buf)
 		}
@@ -208,7 +208,7 @@ func (logger *logger) Println(in ...interface{}) {
 		color.LightWhite.Printf(string(buf))
 	} else {
 		if logger.IsAffiliated() {
-			logger.logger.AffiliateWrite(logger.prefix, buf)
+			logger.mainLogger.AffiliateWrite(logger.prefix, buf)
 		} else {
 			logger.write(buf)
 		}
@@ -225,7 +225,7 @@ func (logger *logger) GetVerbosity() LogLevel {
 func (logger *logger) Successf(format string, in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprintf(format, in...) + "\n"
 	if logger.IsAffiliated() {
-		logger.logger.outputLogger(logger.prefix, color.Green, 2, itfs)
+		logger.mainLogger.outputLogger(logger.prefix, color.Green, 2, itfs)
 	} else {
 		logger.output(color.Green, 2, itfs)
 	}
@@ -234,7 +234,7 @@ func (logger *logger) Successf(format string, in ...interface{}) {
 func (logger *logger) Success(in ...interface{}) {
 	var itfs string = " SUCCESS " + fmt.Sprint(in...) + "\n"
 	if logger.IsAffiliated() {
-		logger.logger.outputLogger(logger.prefix, color.Green, 2, itfs)
+		logger.mainLogger.outputLogger(logger.prefix, color.Green, 2, itfs)
 	} else {
 		logger.output(color.Green, 2, itfs)
 	}
@@ -243,7 +243,7 @@ func (logger *logger) Success(in ...interface{}) {
 func (logger *logger) Failuref(format string, in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprintf(format, in...) + "\n"
 	if logger.IsAffiliated() {
-		logger.logger.outputLogger(logger.prefix, color.Red, 2, itfs)
+		logger.mainLogger.outputLogger(logger.prefix, color.Red, 2, itfs)
 	} else {
 		logger.output(color.Red, 2, itfs)
 	}
@@ -252,7 +252,7 @@ func (logger *logger) Failuref(format string, in ...interface{}) {
 func (logger *logger) Failure(in ...interface{}) {
 	var itfs string = " FAILURE " + fmt.Sprint(in...) + "\n"
 	if logger.IsAffiliated() {
-		logger.logger.outputLogger(logger.prefix, color.Red, 2, itfs)
+		logger.mainLogger.outputLogger(logger.prefix, color.Red, 2, itfs)
 	} else {
 		logger.output(color.Red, 2, itfs)
 	}
