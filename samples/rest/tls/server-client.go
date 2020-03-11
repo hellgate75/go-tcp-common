@@ -33,6 +33,8 @@ func main() {
 	time.Sleep(3 * time.Second)
 	var errS error = nil
 	var errC error = nil
+	defer client.Close()
+	defer server.Stop()
 	go func() {
 		errS = server.StartTLS("", port, serverCert, serverKey)
 		if errS != nil {
@@ -54,5 +56,4 @@ func main() {
 	clientLogger.Infof("Response Code: %v", responseCode)
 	clientLogger.Infof("Error: %v", errCall)
 	clientLogger.Infof("Message: %s", answer)
-	os.Exit(0)
 }
