@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/hellgate75/go-tcp-common/common"
+	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/hellgate75/go-tcp-common/log"
 	"github.com/hellgate75/go-tcp-common/net/rest/tls/client"
 )

@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	common2 "github.com/hellgate75/go-tcp-common/common"
+	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/hellgate75/go-tcp-common/log"
 	"io/ioutil"
 	"net/http"
@@ -37,7 +37,7 @@ type restServer struct {
 	CaCert     string
 	server     *http.Server
 	config      *tls.Config
-	paths       map[string]*common2.HandlerStruct
+	paths       map[string]*common.HandlerStruct
 	tlsMode     bool
 	logger      log.Logger
 }
@@ -49,11 +49,11 @@ var (
 	DEFAULT_IDLE_TIMEOUT time.Duration = 600 * time.Second
 )
 
-func New(logger log.Logger) common2.RestServer {
+func New(logger log.Logger) common.RestServer {
 	return NewCaCert(false, "", logger)
 }
 
-func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) common2.RestServer {
+func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) common.RestServer {
 	tlsCfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -93,7 +93,7 @@ func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) 
 	return &restServer {
 		config:     tlsCfg,
 		server:     nil,
-		paths:      make(map[string]*common2.HandlerStruct),
+		paths:      make(map[string]*common.HandlerStruct),
 		tlsMode:    false,
 		logger:     logger,
 		CaCert:     caCert,
