@@ -14,8 +14,14 @@ type CertificateKeyPair struct {
 
 // Generic Rest Client interface
 type RestClient interface {
+	// Authenticate and open connectivity with the server
 	Open() error
+	// Close connection and sign-off the server
+	Close() error
+	//Send a requerst to the connected server
 	Request(protocol RestProtocol, path string, method RestMethod, accepts *MimeType, body *[]byte, values *url.Values) (int, []byte, error)
+	// Returns information about server connectivity state
+	IsConnected() bool
 }
 
 // Generic Rest Callback function for handling pattern request
@@ -28,6 +34,7 @@ type RestServer interface {
 	StartTLS(hostOrIpAddress string, port int32, cert string, key string) error
 	Start(hostOrIpAddress string, port int32) error
 	Stop() error
+	Shutdown() error
 	IsRunning() bool
 	WaitFor() error
 }

@@ -52,6 +52,21 @@ func (rc *restClient) Request(protocol ccom.RestProtocol, path string, method cc
 	return status, output, err
 }
 
+func (rc *restClient) IsConnected() bool {
+	return rc.client != nil
+}
+
+func (rc *restClient) Close() error {
+	if rc.client != nil {
+		rc.client.CloseIdleConnections()
+		err := rc.conn.Close()
+		rc.client = nil
+		rc.conn = nil
+		return err
+	}
+	return nil
+}
+
 func (rc *restClient) Open() error {
 	var err error = nil
 	defer func(){
