@@ -2,10 +2,11 @@ package server
 
 import (
 	"crypto/rand"
+	"crypto/tls"
+	"github.com/hellgate75/go-tcp-common/log"
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"net/http"
 	"sync"
-	"crypto/tls"
 	"time"
 )
 
@@ -55,6 +56,7 @@ type restServer struct {
 	config      *tls.Config
 	paths       map[string]*HandlerStruct
 	tlsMode     bool
+	logger      log.Logger
 }
 
 var (
@@ -64,11 +66,11 @@ var (
 	DEFAULT_IDLE_TIMEOUT time.Duration = 600 * time.Second
 )
 
-func New() RestServer {
-	return NewInsecure(false)
+func New(logger log.Logger) RestServer {
+	return NewInsecure(false, logger)
 }
 
-func NewInsecure(allowInsecureConnections bool) RestServer {
+func NewInsecure(allowInsecureConnections bool, logger log.Logger) RestServer {
 	tlsCfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -89,5 +91,6 @@ func NewInsecure(allowInsecureConnections bool) RestServer {
 		server:     nil,
 		paths:      make(map[string]*HandlerStruct),
 		tlsMode:    false,
+		logger:     logger,
 	}
 }

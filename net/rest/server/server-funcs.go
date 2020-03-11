@@ -16,7 +16,9 @@ func (rs *restServer) AddPath(path string, callback RestCallback, accepts *commo
 	var state bool = false
 	defer func() {
 		if r := recover(); r != nil {
-			//err = errors.New(fmt.Sprintf("Errors dueing TLS Rest Server Start up, Details: %v", r))
+			if rs.logger != nil {
+				rs.logger.Errorf("Errors dueing TLS Rest Server Start up, Details: %v", r)
+			}
 			rs.RUnlock()
 			state = false
 		}
@@ -59,7 +61,11 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 	var locked bool = false
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("Errors dueing TLS Rest Server Start up, Details: %v", r))
+			var message string =  fmt.Sprintf("Errors dueing TLS Rest Server Start up, Details: %v", r)
+			err = errors.New(message)
+			if rs.logger != nil {
+				rs.logger.Error(message)
+			}
 		} else {
 			rs.tlsMode = true
 		}
@@ -74,6 +80,10 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 		if rs.tlsMode {
 			mode = "TLS/TCP"
 		}
+		var message = fmt.Sprintf("Server already started in %s mode!!", mode)
+		if rs.logger != nil {
+			rs.logger.Error(message)
+		}
 		return errors.New(fmt.Sprintf("Server already started in %s mode!!", mode))
 	}
 	rs.server = &http.Server{
@@ -85,6 +95,10 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 			sessionKey, err := uuid.NewV4()
 			if err == nil {
 				ctx = context.WithValue(ctx, common.ContextSessionKey, sessionKey)
+			} else {
+				if rs.logger != nil {
+					rs.logger.Errorf("Error retriving session id, Details: %s", err)
+				}
 			}
 			ctx = context.WithValue(ctx, common.ContextKeyAuthtoken, common.GenerateSecureToken(64))
 			return ctx
@@ -106,7 +120,11 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 	var locked bool = false
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("Errors dueing TLS Rest Server Start up, Details: %v", r))
+			var message string =  fmt.Sprintf("Errors dueing TLS Rest Server Start up, Details: %v", r)
+			err = errors.New(message)
+			if rs.logger != nil {
+				rs.logger.Error(message)
+			}
 		} else {
 			rs.tlsMode = false
 		}
@@ -121,6 +139,10 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 		if rs.tlsMode {
 			mode = "TLS/TCP"
 		}
+		var message = fmt.Sprintf("Server already started in %s mode!!", mode)
+		if rs.logger != nil {
+			rs.logger.Error(message)
+		}
 		return errors.New(fmt.Sprintf("Server already started in %s mode!!", mode))
 	}
 	rs.server = &http.Server{
@@ -132,6 +154,10 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 			sessionKey, err := uuid.NewV4()
 			if err == nil {
 				ctx = context.WithValue(ctx, common.ContextSessionKey, sessionKey)
+			} else {
+				if rs.logger != nil {
+					rs.logger.Errorf("Error retriving session id, Details: %s", err)
+				}
 			}
 			ctx = context.WithValue(ctx, common.ContextKeyAuthtoken, common.GenerateSecureToken(64))
 			return ctx
