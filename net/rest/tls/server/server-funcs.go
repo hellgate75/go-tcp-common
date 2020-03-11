@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	common2 "github.com/hellgate75/go-tcp-common/common"
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/satori/go.uuid"
 	"net"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-func (rs *restServer) AddPath(path string, callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
+func (rs *restServer) AddPath(path string, callback common2.RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
 	var state bool = false
 	defer func() {
 		if r := recover(); r != nil {
@@ -25,7 +26,7 @@ func (rs *restServer) AddPath(path string, callback RestCallback, accepts *commo
 	}()
 	if _, ok := rs.paths[path]; !ok {
 		rs.RLock()
-		handler := HandlerStruct{
+		handler := common2.HandlerStruct{
 			Handler: &callback,
 			Consumes: accepts,
 			Produces: produces,
@@ -81,7 +82,7 @@ func (rs *restServer) AddPath(path string, callback RestCallback, accepts *commo
 	return state
 }
 
-func (rs *restServer) AddRootPath(callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
+func (rs *restServer) AddRootPath(callback common2.RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
 	return rs.AddPath("/", callback, accepts, produces, allowedMethods)
 }
 

@@ -26,7 +26,11 @@ Here list of linked repositories:
 
 Enjoy the experience.
 
+## Available samples
 
+Samples are available for:
+
+* [TSL Rest Server / Client](/samples/rest/tls/server-client.go)
 
 ## License
 
