@@ -48,6 +48,7 @@ type HandlerStruct struct {
 	Methods  []RestMethod
 }
 
+// String representation of the Handler Strcture
 func (hs HandlerStruct) String() string {
 	return fmt.Sprintf("HandlerStruct{Handler: %v, Comsumes: %s, Produces: %s, Path: %s, Web Methods: %v}",
 		hs.Handler != nil, *hs.Consumes, *hs.Produces, hs.Path, hs.Methods)

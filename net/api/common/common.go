@@ -16,6 +16,25 @@ type Security struct {
 	UseTLS          bool
 }
 
+type KeyFiler struct{
+	Key             string
+	RegExp          regexp.Regexp
+}
+
+type KeyValuePair struct{
+	Key             string
+	Value           interface{}
+	Model           *Model
+}
+
+//Row type will be similar to
+type Model struct {
+	Values          []KeyValuePair
+	SplitSeparator  string
+	KeySeparator  string
+}
+
+
 type ApiModelStream interface{
 	Parse() ApiModelStream
 	FilterByKey(filter *KeyFiler) ApiModelStream
