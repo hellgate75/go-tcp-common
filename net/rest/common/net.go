@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/hellgate75/go-tcp-common/net/common"
 	"net/http"
 	"net/url"
 )
@@ -19,18 +20,18 @@ type RestClient interface {
 	// Close connection and sign-off the server
 	Close() error
 	//Send a requerst to the connected server
-	Request(protocol RestProtocol, path string, method RestMethod, accepts *MimeType, body *[]byte, values *url.Values) (int, []byte, error)
+	Request(protocol common.RestProtocol, path string, method common.RestMethod, accepts *common.MimeType, body *[]byte, values *url.Values) (int, []byte, error)
 	// Returns information about server connectivity state
 	IsConnected() bool
 }
 
 // Generic Rest Callback function for handling pattern request
-type RestCallback func(w http.ResponseWriter, req *http.Request, path string, accepts MimeType, produces MimeType) ()
+type RestCallback func(w http.ResponseWriter, req *http.Request, path string, accepts common.MimeType, produces common.MimeType) ()
 
 // Generic Rest Server interface
 type RestServer interface {
-	AddPath(path string, callback RestCallback, accepts *MimeType, produces *MimeType, allowedMethods []RestMethod) bool
-	AddRootPath(callback RestCallback, accepts *MimeType, produces *MimeType, allowedMethods []RestMethod) bool
+	AddPath(path string, callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool
+	AddRootPath(callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool
 	StartTLS(hostOrIpAddress string, port int32, cert string, key string) error
 	Start(hostOrIpAddress string, port int32) error
 	Stop() error
@@ -42,10 +43,10 @@ type RestServer interface {
 // Structure containing 
 type HandlerStruct struct {
 	Handler  *RestCallback
-	Consumes *MimeType
-	Produces *MimeType
+	Consumes *common.MimeType
+	Produces *common.MimeType
 	Path     string
-	Methods  []RestMethod
+	Methods  []common.RestMethod
 }
 
 // String representation of the Handler Strcture

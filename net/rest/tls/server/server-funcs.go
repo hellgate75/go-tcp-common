@@ -6,13 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
+	ncom "github.com/hellgate75/go-tcp-common/net/common"
 	"github.com/satori/go.uuid"
 	"net"
 	"net/http"
 	"time"
 )
 
-func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
+func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts *ncom.MimeType, produces *ncom.MimeType, allowedMethods []ncom.RestMethod) bool {
 	var state bool = false
 	defer func() {
 		if r := recover(); r != nil {
@@ -37,7 +38,7 @@ func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts
 		handlerFunc := func(w http.ResponseWriter, req *http.Request)() {
 			defer func(){
 				if r := recover(); r != nil {
-					common.SubmitFaiure(w, http.StatusInternalServerError, fmt.Sprintf("Error: %v", r))
+					ncom.SubmitFaiure(w, http.StatusInternalServerError, fmt.Sprintf("Error: %v", r))
 					return
 				}
 			}()
@@ -60,7 +61,7 @@ func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts
 				if ! matching {
 					var message string = fmt.Sprintf("Web Method (path: %s): %s, not matching with available %v", path, requiredWebMethod, handlerStruct.Methods)
 					rs.logger.Warnf(fmt.Sprintf("server: exec-path: Required " + message))
-					common.SubmitFaiure(w, http.StatusMethodNotAllowed, message)
+					ncom.SubmitFaiure(w, http.StatusMethodNotAllowed, message)
 					return
 				}
 				rs.logger.Warnf("server: exec-path: Calling path: %s, func: %v", path, handlerStruct.Handler != nil)
@@ -70,7 +71,7 @@ func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts
 					rs.logger.Warnf("server: exec-path: Unavailable Handler for path: %s", path)
 				}
 			} else {
-				common.SubmitFaiure(w, http.StatusNotFound, "NOT_FOUND")
+				ncom.SubmitFaiure(w, http.StatusNotFound, "NOT_FOUND")
 				return
 			}
 		}
@@ -81,7 +82,7 @@ func (rs *restServer) AddPath(path string, callback common.RestCallback, accepts
 	return state
 }
 
-func (rs *restServer) AddRootPath(callback common.RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool {
+func (rs *restServer) AddRootPath(callback common.RestCallback, accepts *ncom.MimeType, produces *ncom.MimeType, allowedMethods []ncom.RestMethod) bool {
 	return rs.AddPath("/", callback, accepts, produces, allowedMethods)
 }
 
@@ -120,16 +121,16 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 		TLSConfig: rs.config,
 		Handler: rs,
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
-			ctx = context.WithValue(ctx, common.ContextRemoteAddress, c.RemoteAddr())
+			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
 			sessionKey, err := uuid.NewV4()
 			if err == nil {
-				ctx = context.WithValue(ctx, common.ContextSessionKey, sessionKey)
+				ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
 			} else {
 				if rs.logger != nil {
 					rs.logger.Errorf("server: start : tls: Error retriving session id, Details: %s", err)
 				}
 			}
-			ctx = context.WithValue(ctx, common.ContextKeyAuthtoken, common.GenerateSecureToken(64))
+			ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
 			return ctx
 		},
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
@@ -182,16 +183,16 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 		TLSConfig: rs.config,
 		Handler: rs,
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
-			ctx = context.WithValue(ctx, common.ContextRemoteAddress, c.RemoteAddr())
+			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
 			sessionKey, err := uuid.NewV4()
 			if err == nil {
-				ctx = context.WithValue(ctx, common.ContextSessionKey, sessionKey)
+				ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
 			} else {
 				if rs.logger != nil {
 					rs.logger.Errorf("server: start : simple: Error retriving session id, Details: %s", err)
 				}
 			}
-			ctx = context.WithValue(ctx, common.ContextKeyAuthtoken, common.GenerateSecureToken(64))
+			ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
 			return ctx
 		},
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),

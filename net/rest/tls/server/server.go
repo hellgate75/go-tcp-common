@@ -71,19 +71,19 @@ func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) 
 	}
 	if "" != caCert {
 		if logger != nil {
-			logger.Errorf("client: using ca cert: <%s>", caCert)
+			logger.Debugf("server: using ca cert: <%s>", caCert)
 		}
 		caCert, err := ioutil.ReadFile(caCert)
 		if err != nil {
 			if logger != nil {
-				logger.Errorf("client: using ca cert: <%s>, details: %s", caCert, err.Error())
+				logger.Errorf("server: using ca cert: <%s>, details: %s", caCert, err.Error())
 			}
 		} else {
 			caCertPool := x509.NewCertPool()
 			if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
 				if logger != nil {
 					logger.Error("No certs appended, using system certificates only")
-					logger.Fatalf("client: loadkeys: %s", err.Error())
+					logger.Fatalf("server: loadkeys: %s", err.Error())
 				}
 			} else {
 				tlsCfg.RootCAs= caCertPool

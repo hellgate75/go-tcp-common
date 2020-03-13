@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	ccom "github.com/hellgate75/go-tcp-common/net/rest/common"
+	ncom "github.com/hellgate75/go-tcp-common/net/common"
 	"net/url"
 )
 
-func (rc *restClient) Request(protocol ccom.RestProtocol, path string, method ccom.RestMethod, accepts *ccom.MimeType, body *[]byte, values *url.Values) (int, []byte, error) {
+func (rc *restClient) Request(protocol ncom.RestProtocol, path string, method ncom.RestMethod, accepts *ncom.MimeType, body *[]byte, values *url.Values) (int, []byte, error) {
 	var html *http.Response = nil
 	var err error = nil
 	var status int = 0
@@ -23,13 +23,13 @@ func (rc *restClient) Request(protocol ccom.RestProtocol, path string, method cc
 		}
 	}()
 	requestUrl := fmt.Sprintf("%s://%s:%s%s", string(protocol), rc.IpAddress, rc.Port, path)
-	if ccom.REST_METHOD_GET == method {
+	if ncom.REST_METHOD_GET == method {
 		html,err = rc.client.Get(requestUrl)
-	} else if ccom.REST_METHOD_POST == method {
+	} else if ncom.REST_METHOD_POST == method {
 		html,err = rc.client.Post(requestUrl, string(*accepts), bytes.NewBuffer(*body))
-	} else if ccom.REST_METHOD_POST_FORM == method {
+	} else if ncom.REST_METHOD_POST_FORM == method {
 		html,err = rc.client.PostForm(requestUrl, *values)
-	} else if ccom.REST_METHOD_HEAD == method {
+	} else if ncom.REST_METHOD_HEAD == method {
 		html,err = rc.client.Head(requestUrl)
 	} else {
 		return status, []byte{}, errors.New(fmt.Sprintf("Unavailable Method: %s!!", method))

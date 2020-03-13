@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/hellgate75/go-tcp-common/net/common"
 	"github.com/hellgate75/go-tcp-common/net/rest/tls/client"
 	"github.com/hellgate75/go-tcp-common/log"
-	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/hellgate75/go-tcp-common/net/rest/tls/server"
 	"net/http"
 	"os"

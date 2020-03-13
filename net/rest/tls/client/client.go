@@ -2,14 +2,14 @@ package client
 
 import (
 	"crypto/tls"
-	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/hellgate75/go-tcp-common/log"
+	rcom "github.com/hellgate75/go-tcp-common/net/rest/common"
 	"net/http"
 )
 
 type restClient struct {
 	useInsecure     bool
-	Cert            *common.CertificateKeyPair
+	Cert            *rcom.CertificateKeyPair
 	CaCert          string
 	IpAddress       string
 	Port            string
@@ -18,9 +18,9 @@ type restClient struct {
 	logger          log.Logger
 }
 
-func NewWithCertificate(cert string, key string, ipAddress string, port string, logger log.Logger) common.RestClient {
+func NewWithCertificate(cert string, key string, ipAddress string, port string, logger log.Logger) rcom.RestClient {
 	return &restClient {
-		Cert: &common.CertificateKeyPair{
+		Cert: &rcom.CertificateKeyPair{
 			Cert: cert,
 			Key: key,
 		},
@@ -34,7 +34,7 @@ func NewWithCertificate(cert string, key string, ipAddress string, port string, 
 	}
 }
 
-func NewWithCaCertificate(caCert string, ipAddress string, port string, logger log.Logger) common.RestClient {
+func NewWithCaCertificate(caCert string, ipAddress string, port string, logger log.Logger) rcom.RestClient {
 	return &restClient {
 		Cert: nil,
 		IpAddress: ipAddress,
