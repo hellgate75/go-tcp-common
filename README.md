@@ -76,7 +76,7 @@ Samples are available for:
 * [API SSL/TLS security sample Server / Client lifecycle](/samples/api/tls/server-client.go)
 
 Before to run the sample prease create the certificates :
-On the root of the project eecute
+<br/>On the root of the project execute
 ```
 ./makecert.sh -d
 ```
