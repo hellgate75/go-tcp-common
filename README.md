@@ -41,27 +41,29 @@ Here list of linked repositories:
 
 * [log](/log/logger.go) - System Logger
 
-* [net/api/client](net/api/client/client.go) - Api Client (TLS/No TLS) declarations and implementation
+* [net/api/client](/net/api/client/client.go) - Api Client (TLS/No TLS) declarations and implementation
 
-* [net/api/common](net/api/common/common.go) - Api Client Commmon Models
+* [net/api/common](/net/api/common/common.go) - Api Client Commmon Models
 
-* [net/api/server](net/api/server/server.go) - Api Server (TLS/No TLS) declarations and implementation
+* [net/api/server](/net/api/server/server.go) - Api Server (TLS/No TLS) declarations and implementation
 
-* [net/common](net/common/servers.go) - Common Net interfaces
+* [net/common](/net/common/servers.go) - Common Net interfaces
 
-* [net/rest/common](net/rest/common/net.go) - Common Net Rest interfaces
+* [net/rest/common](/net/rest/common/net.go) - Common Net Rest interfaces
 
-* [net/rest/tls/client](net/rest/tls/client/client.go) - Rest TLS Client (TLS/No TLS) declarations
+* [net/rest/tls/client](/net/rest/tls/client/client.go) - Rest TLS Client (TLS/No TLS) declarations
 
-* [net/rest/tls/client -> impl](net/rest/tls/client/client-funcs.go) - Rest TLS Client (TLS/No TLS) implementation
+* [net/rest/tls/client -> impl](/net/rest/tls/client/client-funcs.go) - Rest TLS Client (TLS/No TLS) implementation
 
-* [net/rest/tls/server](net/rest/tls/server/server.go) - Rest TLS Server (TLS/No TLS) declarations
+* [net/rest/tls/server](/net/rest/tls/server/server.go) - Rest TLS Server (TLS/No TLS) declarations
 
-* [net/rest/tls/server -> impl](net/rest/tls/server/server-funcs.go) - Rest TLS Server (TLS/No TLS) implementation
+* [net/rest/tls/server -> impl](/net/rest/tls/server/server-funcs.go) - Rest TLS Server (TLS/No TLS) implementation
 
-* [net/rest/tls -> clients](net/rest/tls/clients.go) - Rest TLS Clients export interfaces
+* [net/rest/tls -> clients](/net/rest/tls/clients.go) - Rest TLS Clients export interfaces
 
-* [net/rest/tls -> servers](net/rest/tls/servers.go) - Rest TLS Servers export interfaces
+* [net/rest/tls -> servers](/net/rest/tls/servers.go) - Rest TLS Servers export interfaces
+
+* [pool](/pool/threads.go) - Thread Pool component and related interfaces and sub-components
 
 <br/>
 
@@ -69,9 +71,9 @@ Here list of linked repositories:
 
 Samples are available for:
 
-* [TSL Rest Server / Client](/samples/rest/tls/server-client.go)
+* [SSL/TLS Rest sample Server / Client lifecycle](/samples/rest/tls/server-client.go)
 
-* [API TLS security Server / Client](/samples/api/tls/server-client.go)
+* [API SSL/TLS security sample Server / Client lifecycle](/samples/api/tls/server-client.go)
 
 
 Enjoy the experience.
