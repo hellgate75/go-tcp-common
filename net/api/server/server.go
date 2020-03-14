@@ -28,6 +28,7 @@ type apiServer struct{
 	logger          log.Logger
 	server          *http.Server
 	routes          map[string]*common.HandlerRef
+	tlsMode			bool
 }
 var (
 	DEFAULT_HEADER_READ_TIMEOUT time.Duration = 60 * time.Second
@@ -37,6 +38,24 @@ var (
 )
 
 func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSConfig) error {
+	var err error = nil
+	var locked bool = false
+	defer func() {
+		if r := recover(); r != nil {
+			var message string =  fmt.Sprintf("server: api: start : tls: Errors during TLS Api Server Start up, Details: %v", r)
+			err = errors.New(message)
+			if as.logger != nil {
+				as.logger.Error(message)
+			}
+		} else {
+			as.tlsMode = true
+		}
+		if locked {
+			as.Unlock()
+		}
+	}()
+	as.Lock()
+	locked = true
 	if as.server != nil {
 		return errors.New("Server already running!!")
 	}
@@ -55,6 +74,7 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 		InsecureSkipVerify: config.UseInsecure,
 		Renegotiation: tls.RenegotiateNever,
 	}
+	as.logger.Debugf("api: server: using insecure: <%v>", config.UseInsecure)
 	if "" != config.CaCertificate {
 		if as.logger != nil {
 			as.logger.Debugf("api: server: using ca cert: <%s>", config.CaCertificate)
@@ -110,9 +130,34 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 		WriteTimeout: DEFAULT_WRITE_TIMEOUT,
 		IdleTimeout: DEFAULT_IDLE_TIMEOUT,
 	}
-	return as.server.ListenAndServe()
+	as.logger.Debugf("Starting tls with Certificate file : <%s> and Key file: <%s>", config.CertFile, config.KeyFile)
+	err = as.server.ListenAndServeTLS(config.CertFile, config.KeyFile)
+	if err != nil {
+		as.logger.Errorf("server: start : tls: Error: %s", err)
+	}
+	as.Unlock()
+	locked = false
+	return err
 }
 func (as *apiServer) Start(ipAddress string, port int64) error {
+	var err error = nil
+	var locked bool = false
+	defer func() {
+		if r := recover(); r != nil {
+			var message string =  fmt.Sprintf("server: api: start : simple: Errors during Api Server Start up, Details: %v", r)
+			err = errors.New(message)
+			if as.logger != nil {
+				as.logger.Error(message)
+			}
+		} else {
+			as.tlsMode = false
+		}
+		if locked {
+			as.Unlock()
+		}
+	}()
+	as.Lock()
+	locked = true
 	if as.server != nil {
 		return errors.New("Server already running!!")
 	}
@@ -138,7 +183,13 @@ func (as *apiServer) Start(ipAddress string, port int64) error {
 		WriteTimeout: DEFAULT_WRITE_TIMEOUT,
 		IdleTimeout: DEFAULT_IDLE_TIMEOUT,
 	}
-	return as.server.ListenAndServe()
+	err = as.server.ListenAndServe()
+	if err != nil {
+		as.logger.Errorf("server: start : simple: Error: %s", err)
+	}
+	as.Unlock()
+	locked = false
+	return err
 }
 func (as *apiServer) Shutdown() error {
 	if as.server == nil {
@@ -175,11 +226,12 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 		as.logger.Warnf("api: server: exec-path: Client accepts: %v", req.Header.Get("Accept"))
 		as.logger.Warnf("api: server: exec-path: Client content: %v", req.Header.Get("Content-Type"))
 		//if handlerStruct.Produces == nil || handlerStruct.Produces !=
-		as.logger.Warnf("api: server: exec-path: Calling path: %s, func: %s", path, handlerStruct != nil)
+		as.logger.Warnf("api: server: exec-path: Calling path: %s, func: %v", path, handlerStruct != nil)
 		if handlerStruct.IsAction() {
-			err := handlerStruct.Action.Run(req, w, requiredWebMethod)
+			err := handlerStruct.Action.Run(req, w, requiredWebMethod, *handlerStruct.Consumes, *handlerStruct.Produces)
 			var code int = http.StatusOK
 			var status string = ""
+			var answerToClient bool = true
 			if err != nil {
 				code = http.StatusInternalServerError
 				message:=fmt.Sprintf("api: server: exec-path: Calling path: %s, details: %s", path, err)
@@ -193,17 +245,23 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 				}
 				ncom.SubmitFaiure(w, http.StatusInternalServerError, status)
 			} else {
-				message:=fmt.Sprintf("api: server: exec-path: Calling path: %s, status: %s", path, "OK")
-				status = "status: KO\n"+message
-				if string(*handlerStruct.Produces) == string(ncom.XML_MIME_TYPE) {
-					status = "<status>OK</status>\n<message>"+message+"<message>"
-				} else if string(*handlerStruct.Produces) == string(ncom.YAML_MIME_TYPE) {
-					status = "status: OK\nmessage: "+message
-				} else if string(*handlerStruct.Produces) == string(ncom.JSON_MIME_TYPE) {
-					status = "{\n\"status\": \"OK\"\n\"message\": \""+message+"\"\n}"
+				if ! handlerStruct.HasAnswer {
+					message:=fmt.Sprintf("api: server: exec-path: Calling path: %s, status: %s", path, "OK")
+					status = "status: KO\n"+message
+					if string(*handlerStruct.Produces) == string(ncom.XML_MIME_TYPE) {
+						status = "<status>OK</status>\n<message>"+message+"<message>"
+					} else if string(*handlerStruct.Produces) == string(ncom.YAML_MIME_TYPE) {
+						status = "status: OK\nmessage: "+message
+					} else if string(*handlerStruct.Produces) == string(ncom.JSON_MIME_TYPE) {
+						status = "{\n\"status\": \"OK\"\n\"message\": \""+message+"\"\n}"
+					}
+				} else {
+					answerToClient = false
 				}
 			}
-			ncom.SubmitFaiure(w, code, status)
+			if answerToClient {
+				ncom.SubmitFaiure(w, code, status)
+			}
 		} else if handlerStruct.IsStream() {
 			if handlerStruct.Stream.CanFetch() {
 				handlerStruct.Stream.Fetch()
@@ -311,12 +369,13 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 		ncom.SubmitFaiure(w, http.StatusNotFound, "NOT_FOUND")
 	}
 }
-func (as *apiServer) AddApiAction(path string, action common.ApiAction, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
+func (as *apiServer) AddApiAction(path string, action common.ApiAction, hasInternalAnswer bool, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
 	out := false
 	if _, ok := as.routes[path]; !ok {
 		as.routes[path] = &common.HandlerRef{
 			Method: method,
 			Path: path,
+			HasAnswer: hasInternalAnswer,
 			Action: action,
 			Stream: nil,
 			Produces: produces,

@@ -91,7 +91,7 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 	var locked bool = false
 	defer func() {
 		if r := recover(); r != nil {
-			var message string =  fmt.Sprintf("server: start : tls: Errors dueing TLS Rest Server Start up, Details: %v", r)
+			var message string =  fmt.Sprintf("server: start : tls: Errors during TLS Rest Server Start up, Details: %v", r)
 			err = errors.New(message)
 			if rs.logger != nil {
 				rs.logger.Error(message)
@@ -141,7 +141,7 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 	}
 	err = rs.server.ListenAndServeTLS(cert, key)
 	if err != nil {
-		rs.logger.Errorf("")
+		rs.logger.Errorf("server: start : tls: Error: %s", err)
 	}
 	rs.Unlock()
 	locked = false
