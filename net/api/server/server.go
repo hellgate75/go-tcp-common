@@ -221,10 +221,8 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 		var requiredWebMethod string = req.Method
 
 		as.logger.Debugf("api: server: exec-path: Requested Method: %s", requiredWebMethod)
-		as.logger.Debugf("api: server: exec-path: Available Path %s Methods: %s", path, handlerStruct.Method)
+		as.logger.Debugf("api: server: exec-path: Available Path %s Handler: %s", path, handlerStruct)
 
-		as.logger.Warnf("api: server: exec-path: Client accepts: %v", req.Header.Get("Accept"))
-		as.logger.Warnf("api: server: exec-path: Client content: %v", req.Header.Get("Content-Type"))
 		//if handlerStruct.Produces == nil || handlerStruct.Produces !=
 		as.logger.Warnf("api: server: exec-path: Calling path: %s, func: %v", path, handlerStruct != nil)
 		if handlerStruct.IsAction() {

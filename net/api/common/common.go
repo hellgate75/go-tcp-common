@@ -48,8 +48,8 @@ type HandlerRef struct{
 }
 
 func (ha *HandlerRef) String() string {
-	return fmt.Sprintf("HandlerRef{Psth: \"%s\", Action: %v, Stream: %v, Method: %v, Produces: %v, Consumes: %x}",
-		ha.Path, ha.Action != nil, ha.Stream != nil, ha.Method, ha.Produces, ha.Consumes)
+	return fmt.Sprintf("HandlerRef{Path: \"%s\", Action: %v, Stream: %v, Method: %v, Produces: %v, Consumes: %v}",
+		ha.Path, ha.Action != nil, ha.Stream != nil, *ha.Method, *ha.Produces, *ha.Consumes)
 }
 
 func (ha *HandlerRef) IsAction() bool {

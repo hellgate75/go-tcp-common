@@ -240,10 +240,10 @@ func NewPipeStream(r *io.PipeReader) (DataStream, error){
 		return nil, errors.New("Nil pipe reader in imput")
 	}
 	buff := bytes.NewBuffer([]byte{})
-	_, err := buff.ReadFrom(r)
-	if err != nil {
-		return nil, err
-	}
+	//_, err := buff.ReadFrom(r)
+	//if err != nil {
+	//	return nil, err
+	//}
 	var reader io.Reader = r
 	return &apiStream{
 		_buf: buff,
