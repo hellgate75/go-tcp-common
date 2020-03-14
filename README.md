@@ -75,6 +75,22 @@ Samples are available for:
 
 * [API SSL/TLS security sample Server / Client lifecycle](/samples/api/tls/server-client.go)
 
+Before to run the sample prease create the certificates :
+On the root of the project eecute
+```
+./makecert.sh -d
+```
+
+Then to run the Rest Server/Client Sample :
+```
+go run samples/rest/tls/server-client.go
+```
+
+
+Or to run the Api Server/Client Sample :
+```
+go run samples/api/tls/server-client.go
+```
 
 Enjoy the experience.
 
