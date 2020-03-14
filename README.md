@@ -18,19 +18,63 @@ Here list of linked repositories:
 
 [Client Repository](https://github.com/hellgate75/go-tcp-client)
 
+[Modules Repository](https://github.com/hellgate75/go-tcp-modules)
+
 [Go Deploy](https://github.com/hellgate75/go-deploy)
 
 [Go Deploy Modules](https://github.com/hellgate75/go-deploy-modules)
 
+[Go Deploy Clients](https://github.com/hellgate75/go-deploy-clients)
+
+<br/>
 
 
-Enjoy the experience.
+## Provided libraries:
+
+* [common](/common/common.go) - Common model entities
+
+* [io -> files tools](/io/files.go) - File operations
+
+* [io -> parsers tools](/io/parsers.go) - Json, Yaml, Xml parsing libraries
+
+* [io/streams -> data stream](/io/streams/data-stream.go) - Fluent DataStream model
+
+* [log](/log/logger.go) - System Logger
+
+* [net/api/client](net/api/client/client.go) - Api Client (TLS/No TLS) declarations and implementation
+
+* [net/api/common](net/api/common/common.go) - Api Client Commmon Models
+
+* [net/api/server](net/api/server/server.go) - Api Server (TLS/No TLS) declarations and implementation
+
+* [net/common](net/common/servers.go) - Common Net interfaces
+
+* [net/rest/common](net/rest/common/net.go) - Common Net Rest interfaces
+
+* [net/rest/tls/client](net/rest/tls/client/client.go) - Rest TLS Client (TLS/No TLS) declarations
+
+* [net/rest/tls/client -> impl](net/rest/tls/client/client-funcs.go) - Rest TLS Client (TLS/No TLS) implementation
+
+* [net/rest/tls/server](net/rest/tls/server/server.go) - Rest TLS Server (TLS/No TLS) declarations
+
+* [net/rest/tls/server -> impl](net/rest/tls/server/server-funcs.go) - Rest TLS Server (TLS/No TLS) implementation
+
+* [net/rest/tls -> clients](net/rest/tls/clients.go) - Rest TLS Clients export interfaces
+
+* [net/rest/tls -> servers](net/rest/tls/servers.go) - Rest TLS Servers export interfaces
+
+<br/>
 
 ## Available samples
 
 Samples are available for:
 
 * [TSL Rest Server / Client](/samples/rest/tls/server-client.go)
+
+* [API TLS security Server / Client](/samples/api/tls/server-client.go)
+
+
+Enjoy the experience.
 
 ## License
 

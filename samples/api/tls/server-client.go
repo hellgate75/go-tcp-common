@@ -94,7 +94,7 @@ func main() {
 	clientLogger.Infof("API pattern: /sessionIds")
 	clientLogger.Infof("Response Code: %v", responseCode)
 	clientLogger.Infof("Error: %v", errCall)
-	clientLogger.Infof("Message: %s", answer)
+	clientLogger.Infof("Provided plain session id(s): \n%s", answer)
 
 	reader.Close()
 }
