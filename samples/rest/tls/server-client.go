@@ -33,8 +33,11 @@ func main() {
 	time.Sleep(3 * time.Second)
 	var errS error = nil
 	var errC error = nil
-	defer client.Close()
-	defer server.Stop()
+	defer func() {
+		time.Sleep(5 * time.Second)
+		client.Close()
+		server.Stop()
+	}()
 	go func() {
 		errS = server.StartTLS("", port, serverCert, serverKey)
 		if errS != nil {

@@ -64,6 +64,11 @@ func main() {
 		}
 	}()
 	time.Sleep(10 * time.Second)
+	defer func() {
+		time.Sleep(5 * time.Second)
+		apiClient.Close()
+		apiServer.Stop()
+	}()
 	go func(){
 		err := apiClient.ConnectTSL(ipAddress, port, &common2.TLSConfig{
 			CaCertificate: "certs/ca.crt",

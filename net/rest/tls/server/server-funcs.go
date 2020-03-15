@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
@@ -116,35 +117,105 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 		}
 		return errors.New(fmt.Sprintf("server: start : tls: Server already started in %s mode!!", mode))
 	}
-	rs.server = &http.Server{
-		Addr: fmt.Sprintf("%s:%v", hostOrIpAddress, port),
-		TLSConfig: rs.config,
-		Handler: rs,
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
-			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
-			sessionKey, err := uuid.NewV4()
-			if err == nil {
-				ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
-			} else {
-				if rs.logger != nil {
-					rs.logger.Errorf("server: start : tls: Error retriving session id, Details: %s", err)
+	if rs.handlerFunc == nil {
+		rs.server = &http.Server{
+			Addr: fmt.Sprintf("%s:%v", hostOrIpAddress, port),
+			TLSConfig: rs.config,
+			Handler: rs,
+			ConnContext: func(ctx context.Context, c net.Conn) context.Context{
+				ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
+				sessionKey, err := uuid.NewV4()
+				if err == nil {
+					ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
+				} else {
+					if rs.logger != nil {
+						rs.logger.Errorf("server: start : tls: Error retriving session id, Details: %s", err)
+					}
 				}
+				ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
+				return ctx
+			},
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+			ReadTimeout: DEFAULT_READ_TIMEOUT,
+			ReadHeaderTimeout: DEFAULT_HEADER_READ_TIMEOUT,
+			WriteTimeout: DEFAULT_WRITE_TIMEOUT,
+			IdleTimeout: DEFAULT_IDLE_TIMEOUT,
+		}
+		rs.Unlock()
+		locked = false
+		err = rs.server.ListenAndServeTLS(cert, key)
+		if err != nil && "http: Server closed" != err.Error() {
+			if rs.logger != nil {
+				rs.logger.Errorf("server: start : tls: Error: %s", err)
 			}
-			ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
-			return ctx
-		},
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
-		ReadTimeout: DEFAULT_READ_TIMEOUT,
-		ReadHeaderTimeout: DEFAULT_HEADER_READ_TIMEOUT,
-		WriteTimeout: DEFAULT_WRITE_TIMEOUT,
-		IdleTimeout: DEFAULT_IDLE_TIMEOUT,
+		}
+
+	} else {
+		service := fmt.Sprint("%s:%v",hostOrIpAddress, port)
+		var list net.Listener
+		list, err = tls.Listen("tcp", service, rs.config)
+		if err != nil {
+			rs.logger.Fatalf("server: listen:  Error: %s", err)
+			if rs.listener != nil {
+				(*rs.listener).Close()
+			}
+			panic("server: listen: " + err.Error())
+		}
+		rs.listener = &list
+		if rs.logger != nil {
+			rs.logger.Infof("server: listen: %v", service)
+		}
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.New(fmt.Sprintf("%v", r))
+					rs.logger.Fatalf("TCP Server exit ...")
+				}
+				rs.logger.Info("TCP Server exit ...")
+			}()
+			for rs.IsRunning() {
+				conn, errN := (*rs.listener).Accept()
+				if errN != nil {
+					rs.logger.Errorf("server: accept: %s", errN)
+					continue
+				}
+				if rs.logger != nil {
+					rs.logger.Debugf("server: accepted from %s", conn.RemoteAddr())
+				}
+				tlscon, ok := conn.(*tls.Conn)
+				if ok {
+					rs.logger.Debug("ok=true")
+					state := tlscon.ConnectionState()
+					for _, v := range state.PeerCertificates {
+						rs.logger.Info(x509.MarshalPKIXPublicKey(v.PublicKey))
+					}
+				}
+				rs.conn = append(rs.conn, tlscon)
+				go func(tlsconn *tls.Conn, server common.RestServer, restStruct *restServer) {
+					restStruct.handlerFunc(tlsconn, rs)
+					tlsconn.Close()
+					defer func() {
+						if r := recover(); r != nil {
+							if restStruct.logger != nil {
+								restStruct.logger.Errorf("Error closing connection, error: %v", r)
+							}
+						}
+						restStruct.Unlock()
+					}()
+					restStruct.Lock()
+					conns := make([]*tls.Conn, 0)
+					for _, c := range rs.conn {
+						if c != tlsconn {
+							conns = append(conns, c)
+						}
+					}
+					restStruct.conn = conns
+				}(tlscon, rs, rs)
+			}
+		}()
+		rs.Unlock()
+		locked = false
 	}
-	err = rs.server.ListenAndServeTLS(cert, key)
-	if err != nil {
-		rs.logger.Errorf("server: start : tls: Error: %s", err)
-	}
-	rs.Unlock()
-	locked = false
 	return err
 }
 
@@ -178,51 +249,143 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 		}
 		return errors.New(fmt.Sprintf("server: start : simple: Server already started in %s mode!!", mode))
 	}
-	rs.server = &http.Server{
-		Addr: fmt.Sprintf("%s:%v", hostOrIpAddress, port),
-		TLSConfig: rs.config,
-		Handler: rs,
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
-			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
-			sessionKey, err := uuid.NewV4()
-			if err == nil {
-				ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
-			} else {
-				if rs.logger != nil {
-					rs.logger.Errorf("server: start : simple: Error retriving session id, Details: %s", err)
+	if rs.handlerFunc == nil {
+		rs.server = &http.Server{
+			Addr: fmt.Sprintf("%s:%v", hostOrIpAddress, port),
+			TLSConfig: rs.config,
+			Handler: rs,
+			ConnContext: func(ctx context.Context, c net.Conn) context.Context{
+				ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
+				sessionKey, err := uuid.NewV4()
+				if err == nil {
+					ctx = context.WithValue(ctx, ncom.ContextSessionKey, sessionKey)
+				} else {
+					if rs.logger != nil {
+						rs.logger.Errorf("server: start : simple: Error retriving session id, Details: %s", err)
+					}
 				}
+				ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
+				return ctx
+			},
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+			ReadTimeout: DEFAULT_READ_TIMEOUT,
+			ReadHeaderTimeout: DEFAULT_HEADER_READ_TIMEOUT,
+			WriteTimeout: DEFAULT_WRITE_TIMEOUT,
+			IdleTimeout: DEFAULT_IDLE_TIMEOUT,
+		}
+		rs.Unlock()
+		locked = false
+		err = rs.server.ListenAndServe()
+		if err != nil && "http: Server closed" != err.Error() {
+			rs.logger.Errorf("server: start : tls: Error: %s", err)
+		}
+	} else {
+		service := fmt.Sprint("%s:%v",hostOrIpAddress, port)
+		var list net.Listener
+		list, err = tls.Listen("tcp", service, &tls.Config{})
+		if err != nil {
+			rs.logger.Fatalf("server: listen: Error: %s", err)
+			if rs.listener != nil {
+				(*rs.listener).Close()
 			}
-			ctx = context.WithValue(ctx, ncom.ContextKeyAuthtoken, ncom.GenerateSecureToken(64))
-			return ctx
-		},
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
-		ReadTimeout: DEFAULT_READ_TIMEOUT,
-		ReadHeaderTimeout: DEFAULT_HEADER_READ_TIMEOUT,
-		WriteTimeout: DEFAULT_WRITE_TIMEOUT,
-		IdleTimeout: DEFAULT_IDLE_TIMEOUT,
+			panic("server: listen: " + err.Error())
+		}
+		rs.listener = &list
+		rs.logger.Infof("server: listen: %v", service)
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.New(fmt.Sprintf("%v", r))
+					rs.logger.Fatalf("TCP Server exit ...")
+				}
+				rs.logger.Info("TCP Server exit ...")
+			}()
+			for rs.IsRunning() {
+				conn, errN := (*rs.listener).Accept()
+				if errN != nil {
+					rs.logger.Errorf("server: accept: %s", errN)
+					continue
+				}
+				rs.logger.Debugf("server: accepted from %s", conn.RemoteAddr())
+				tlscon, ok := conn.(*tls.Conn)
+				if ok {
+					rs.logger.Debug("ok=true")
+					state := tlscon.ConnectionState()
+					for _, v := range state.PeerCertificates {
+						rs.logger.Info(x509.MarshalPKIXPublicKey(v.PublicKey))
+					}
+				}
+				rs.conn = append(rs.conn, tlscon)
+				go func(tlsconn *tls.Conn, server common.RestServer, restStruct *restServer) {
+					restStruct.handlerFunc(tlsconn, rs)
+					tlsconn.Close()
+					defer func() {
+						if r := recover(); r != nil {
+							restStruct.logger.Errorf("Error closing connection, error: %v", r)
+						}
+						restStruct.Unlock()
+					}()
+					restStruct.Lock()
+					conns := make([]*tls.Conn, 0)
+					for _, c := range rs.conn {
+						if c != tlsconn {
+							conns = append(conns, c)
+						}
+					}
+					restStruct.conn = conns
+				}(tlscon, rs, rs)
+			}
+		}()
+		rs.Unlock()
+		locked = false
 	}
-	err = rs.server.ListenAndServe()
-	rs.Unlock()
-	locked = false
 	return err
 }
 
 func (rs *restServer) Stop() error {
 	if rs.IsRunning() {
-		return rs.server.Close()
+		if rs.server != nil {
+			defer func() {
+				rs.server = nil
+			}()
+			return rs.server.Close()
+		} else if rs.listener != nil {
+			defer func() {
+				for _, c := range rs.conn {
+					if c != nil {
+						c.Close()
+					}
+				}
+				rs.listener = nil
+			}()
+			return (*rs.listener).Close()
+		}
 	}
 	return nil
 }
 
 func (rs *restServer) Shutdown() error {
 	if rs.IsRunning() {
-		return rs.server.Shutdown(context.Background())
+		if rs.server != nil {
+			defer func() {
+				rs.server = nil
+			}()
+			return rs.server.Shutdown(context.Background())
+		} else {
+			rs.listener = nil
+			for _, c := range rs.conn {
+				if c != nil {
+					c.Close()
+				}
+			}
+			return (*rs.listener).Close()
+		}
 	}
 	return nil
 }
 
 func (rs *restServer) IsRunning() bool {
-	return rs.server != nil
+	return rs.server != nil || rs.listener != nil
 }
 
 func (rs *restServer) WaitFor() error{

@@ -7,6 +7,7 @@ import (
 	"github.com/hellgate75/go-tcp-common/log"
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -18,18 +19,7 @@ var DEFAULT_ROOT_PATH_CALLBACK = func(w http.ResponseWriter, req *http.Request)(
 	w.Write([]byte("Welcome to the rest server\n"))
 }
 
-//var funcEncapsulator = func(callBack *RestCallback, accepts *common.MimeType, produces *common.MimeType) RestHandler {
-//	return func(w http.ResponseWriter, req *http.Request)(){
-//		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
-//		if accepts != nil {
-//			w.Header().Set("Accept", string(*accepts))
-//		}
-//		if produces != nil {
-//			w.Header().Set("Content-Type", string(*produces))
-//		}
-//		(*callBack)(w, req)
-//	}
-//}
+type TLSHandleFunc func(*tls.Conn, common.RestServer)()
 
 type restServer struct {
 	sync.RWMutex
@@ -40,6 +30,9 @@ type restServer struct {
 	paths       map[string]*common.HandlerStruct
 	tlsMode     bool
 	logger      log.Logger
+	handlerFunc TLSHandleFunc
+	listener	*net.Listener
+	conn		[]*tls.Conn
 }
 
 var (
@@ -53,7 +46,15 @@ func New(logger log.Logger) common.RestServer {
 	return NewCaCert(false, "", logger)
 }
 
-func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) common.RestServer {
+func NewHandleFunc(handleFunc TLSHandleFunc, logger log.Logger) common.RestServer {
+	return NewCaCertHandleFunc(false, "", handleFunc, logger)
+}
+
+func NewCaCert(allowInsecureConnections bool, caCert string,logger log.Logger) common.RestServer {
+	return NewCaCertHandleFunc(allowInsecureConnections, caCert, nil, logger)
+}
+
+func NewCaCertHandleFunc(allowInsecureConnections bool, caCert string, handleFunc TLSHandleFunc, logger log.Logger) common.RestServer {
 	tlsCfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -91,11 +92,14 @@ func NewCaCert(allowInsecureConnections bool, caCert string, logger log.Logger) 
 		}
 	}
 	return &restServer {
-		config:     tlsCfg,
-		server:     nil,
-		paths:      make(map[string]*common.HandlerStruct),
-		tlsMode:    false,
-		logger:     logger,
-		CaCert:     caCert,
+		config:     	tlsCfg,
+		server:     	nil,
+		paths:      	make(map[string]*common.HandlerStruct),
+		tlsMode:    	false,
+		logger:     	logger,
+		CaCert:     	caCert,
+		handlerFunc: 	handleFunc,
+		conn: 			make([]*tls.Conn, 0),
+		listener: 		nil,
 	}
 }
