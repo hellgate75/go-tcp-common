@@ -8,6 +8,7 @@ import (
 	common2 "github.com/hellgate75/go-tcp-common/net/api/common"
 	"github.com/hellgate75/go-tcp-common/net/api/server"
 	"github.com/hellgate75/go-tcp-common/net/common"
+	common3 "github.com/hellgate75/go-tcp-common/net/rest/common"
 	"io"
 	"net/http"
 	"os"
@@ -53,8 +54,12 @@ func main() {
 	go func(){
 		err := apiServer.StartTLS("", port, &common2.TLSConfig{
 			CaCertificate: "certs/ca.crt",
-			CertFile: "certs/server.pem",
-			KeyFile: "certs/server.key",
+			Certificates: []common3.CertificateKeyPair{
+				common3.CertificateKeyPair{
+					Cert: "certs/server.pem",
+					Key: "certs/server.key",
+				},
+			},
 			UseInsecure: true,
 		})
 		if err != nil {
@@ -72,8 +77,12 @@ func main() {
 	go func(){
 		err := apiClient.ConnectTSL(ipAddress, port, &common2.TLSConfig{
 			CaCertificate: "certs/ca.crt",
-			CertFile: "certs/client.pem",
-			KeyFile: "certs/client.key",
+			Certificates: []common3.CertificateKeyPair{
+				common3.CertificateKeyPair{
+					Cert: "certs/client.pem",
+					Key: "certs/client.key",
+				},
+			},
 			UseInsecure: true,
 		})
 		if err != nil {

@@ -82,15 +82,17 @@ func (cli *apiClient) ConnectTSL(ipAddress string, port int64, baseConfig *commo
 			}
 		}
 	}
-	if "" != baseConfig.KeyFile &&  "" != baseConfig.CertFile {
-		cli.logger.Debugf("client: using client key: <%s>, cert: <%s> ", baseConfig.KeyFile, baseConfig.CertFile)
-		cli.logger.Debugf("client: using client key: <%s>, cert: <%s> ", baseConfig.KeyFile, baseConfig.CertFile)
-		cert, err := tls.LoadX509KeyPair(baseConfig.CertFile, baseConfig.KeyFile)
-		if err != nil {
-			cli.logger.Errorf("client: Unable to load key : %s and certificate: %s", baseConfig.KeyFile, baseConfig.CertFile)
-			cli.logger.Fatalf("client: loadkeys: %s", err.Error())
-		} else {
-			config.Certificates=[]tls.Certificate{cert}
+	if baseConfig.Certificates != nil && len(baseConfig.Certificates) > 0 {
+		if "" != baseConfig.Certificates[0].Key &&  "" != baseConfig.Certificates[0].Cert {
+			cli.logger.Debugf("client: using client key: <%s>, cert: <%s> ", baseConfig.Certificates[0].Key, baseConfig.Certificates[0].Cert)
+			cli.logger.Debugf("client: using client key: <%s>, cert: <%s> ", baseConfig.Certificates[0].Key, baseConfig.Certificates[0].Cert)
+			cert, err := tls.LoadX509KeyPair(baseConfig.Certificates[0].Cert, baseConfig.Certificates[0].Key)
+			if err != nil {
+				cli.logger.Errorf("client: Unable to load key : %s and certificate: %s", baseConfig.Certificates[0].Key, baseConfig.Certificates[0].Cert)
+				cli.logger.Fatalf("client: loadkeys: %s", err.Error())
+			} else {
+				config.Certificates=[]tls.Certificate{cert}
+			}
 		}
 	}
 	cli.client = &http.Client{

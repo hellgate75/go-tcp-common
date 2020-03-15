@@ -145,7 +145,6 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, certs []commo
 		for _, config := range certs {
 			if "" != config.Key &&  "" != config.Cert {
 				rs.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.Key, config.Cert)
-				rs.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.Key, config.Cert)
 				cert, err := tls.LoadX509KeyPair(config.Cert, config.Key)
 				if err != nil {
 					rs.logger.Errorf("api: server: Unable to load key : %s and certificate: %s", config.Key, config.Cert)

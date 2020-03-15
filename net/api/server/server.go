@@ -96,16 +96,25 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 			}
 		}
 	}
-	if "" != config.KeyFile &&  "" != config.CertFile {
-		as.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.KeyFile, config.CertFile)
-		as.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.KeyFile, config.CertFile)
-		cert, err := tls.LoadX509KeyPair(config.CertFile, config.KeyFile)
-		if err != nil {
-			as.logger.Errorf("api: server: Unable to load key : %s and certificate: %s", config.KeyFile, config.CertFile)
-			as.logger.Fatalf("api: server: loadkeys: %s", err.Error())
-		} else {
-			tlsCfg.Certificates=[]tls.Certificate{cert}
+	var cert string
+	var key string
+	if config.Certificates != nil && len(config.Certificates) > 0 {
+		cert = config.Certificates[0].Cert
+		key = config.Certificates[0].Key
+		var certificates []tls.Certificate = make([]tls.Certificate, 0)
+		for _, config := range config.Certificates {
+			if "" != config.Key &&  "" != config.Cert {
+				as.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.Key, config.Cert)
+				cert, err := tls.LoadX509KeyPair(config.Cert, config.Key)
+				if err != nil {
+					as.logger.Errorf("api: server: Unable to load key : %s and certificate: %s", config.Key, config.Cert)
+					as.logger.Fatalf("api: server: loadkeys: %s", err.Error())
+				} else {
+				}
+				certificates = append(certificates, cert)
+			}
 		}
+		tlsCfg.Certificates=certificates
 	}
 	as.server = &http.Server{
 		Addr: fmt.Sprintf("%s:%v", ipAddress, port),
@@ -130,8 +139,8 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 		WriteTimeout: DEFAULT_WRITE_TIMEOUT,
 		IdleTimeout: DEFAULT_IDLE_TIMEOUT,
 	}
-	as.logger.Debugf("Starting tls with Certificate file : <%s> and Key file: <%s>", config.CertFile, config.KeyFile)
-	err = as.server.ListenAndServeTLS(config.CertFile, config.KeyFile)
+	as.logger.Debugf("Starting tls with Certificate file : <%s> and Key file: <%s>", cert, key)
+	err = as.server.ListenAndServeTLS(cert, key)
 	if err != nil {
 		as.logger.Errorf("server: start : tls: Error: %s", err)
 	}

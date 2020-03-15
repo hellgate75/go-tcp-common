@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"github.com/hellgate75/go-tcp-common/io/streams"
 	"github.com/hellgate75/go-tcp-common/net/common"
+	common2 "github.com/hellgate75/go-tcp-common/net/rest/common"
 	"net/url"
 )
 
 type TLSConfig struct {
 	CaCertificate   string
-	CertFile        string
-	KeyFile         string
+	Certificates    []common2.CertificateKeyPair
 	UseInsecure     bool
 }
 
