@@ -159,7 +159,7 @@ func (cli *apiClient) GetApi(protocol common.RestProtocol, path string, method *
 	} else if common.REST_METHOD_HEAD == *method {
 		html,err = cli.client.Head(requestUrl)
 	} else {
-		return status, []byte{}, errors.New(fmt.Sprintf("Unavailable Method: %s!!", method))
+		return status, []byte{}, errors.New(fmt.Sprintf("Unavailable Method: %v!!", method))
 	}
 	if err!=nil {
 		return status, []byte{}, err

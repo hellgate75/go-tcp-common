@@ -24,8 +24,8 @@ func (ha *helloAction) Run(Args ...interface{}) error {
 	// req (*http.Request) - Server Handling Request
 	// w (http.ResponseWriter) - Server Handling Output Writer
 	// method (string) - web method
-	// Cosnumes (common.MimeType) - What this service consumes
-	// Produces (common.MimeType) - What this service produces (MOCKED DEFAULT JSON)
+	// Cosnumes (types.MimeType) - What this service consumes
+	// Produces (types.MimeType) - What this service produces (MOCKED DEFAULT JSON)
 	common.SubmitSuccess(Args[1].(http.ResponseWriter), ha.message)
 	return nil
 }

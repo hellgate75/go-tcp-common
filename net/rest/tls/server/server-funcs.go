@@ -336,7 +336,7 @@ func (rs *restServer) Start(hostOrIpAddress string, port int32) error {
 			rs.logger.Errorf("server: start : tls: Error: %s", err)
 		}
 	} else {
-		service := fmt.Sprint("%s:%v",hostOrIpAddress, port)
+		service := fmt.Sprintf("%s:%v",hostOrIpAddress, port)
 		var list net.Listener
 		list, err = tls.Listen("tcp", service, &tls.Config{})
 		if err != nil {
