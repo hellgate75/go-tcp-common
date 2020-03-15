@@ -9,6 +9,7 @@ import (
 	"github.com/hellgate75/go-tcp-common/net/rest/common"
 	ncom "github.com/hellgate75/go-tcp-common/net/common"
 	"github.com/satori/go.uuid"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -87,7 +88,7 @@ func (rs *restServer) AddRootPath(callback common.RestCallback, accepts *ncom.Mi
 	return rs.AddPath("/", callback, accepts, produces, allowedMethods)
 }
 
-func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, key string) error {
+func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, certs []common.CertificateKeyPair, CaCertificate string, insecure bool) error {
 	var err error = nil
 	var locked bool = false
 	defer func() {
@@ -117,6 +118,55 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 		}
 		return errors.New(fmt.Sprintf("server: start : tls: Server already started in %s mode!!", mode))
 	}
+	rs.config.InsecureSkipVerify = insecure
+	if "" != CaCertificate {
+		if rs.logger != nil {
+			rs.logger.Debugf("server: using ca cert: <%s>", CaCertificate)
+		}
+		caCert, err := ioutil.ReadFile(CaCertificate)
+		if err != nil {
+			if rs.logger != nil {
+				rs.logger.Errorf("server: using ca cert: <%s>, details: %s", caCert, err.Error())
+			}
+		} else {
+			caCertPool := x509.NewCertPool()
+			if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+				if rs.logger != nil {
+					rs.logger.Error("No certs appended, using system certificates only")
+					rs.logger.Fatalf("server: loadkeys: %s", err.Error())
+				}
+			} else {
+				rs.config.RootCAs= caCertPool
+			}
+		}
+	}
+	if certs != nil && len(certs) > 0 {
+		var crts []tls.Certificate = make([]tls.Certificate, 0)
+		for _, config := range certs {
+			if "" != config.Key &&  "" != config.Cert {
+				rs.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.Key, config.Cert)
+				rs.logger.Debugf("api: server: using server key: <%s>, cert: <%s> ", config.Key, config.Cert)
+				cert, err := tls.LoadX509KeyPair(config.Cert, config.Key)
+				if err != nil {
+					rs.logger.Errorf("api: server: Unable to load key : %s and certificate: %s", config.Key, config.Cert)
+					rs.logger.Fatalf("api: server: loadkeys: %s", err.Error())
+				} else {
+					crts = append(crts, cert)
+				}
+			}
+		}
+		rs.config.Certificates=crts
+	}
+	var cert string
+	var key string
+	if len(certs) > 0 {
+		cert = certs[0].Cert
+		key = certs[0].Key
+	} else {
+		cert = ""
+		key = ""
+	}
+
 	if rs.handlerFunc == nil {
 		rs.server = &http.Server{
 			Addr: fmt.Sprintf("%s:%v", hostOrIpAddress, port),
@@ -151,7 +201,14 @@ func (rs *restServer) StartTLS(hostOrIpAddress string, port int32, cert string, 
 		}
 
 	} else {
-		service := fmt.Sprint("%s:%v",hostOrIpAddress, port)
+		if rs.logger != nil {
+			rs.logger.Debugf("server: listen:  Using ip: %s, port: %v", hostOrIpAddress, port)
+		}
+		service := fmt.Sprintf("%s:%v",hostOrIpAddress, port)
+		if rs.logger != nil {
+			rs.logger.Debugf("server: listen:  Using address: %s", service)
+		}
+
 		var list net.Listener
 		list, err = tls.Listen("tcp", service, rs.config)
 		if err != nil {

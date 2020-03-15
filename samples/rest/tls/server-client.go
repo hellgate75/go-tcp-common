@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hellgate75/go-tcp-common/net/common"
+	common2 "github.com/hellgate75/go-tcp-common/net/rest/common"
 	"github.com/hellgate75/go-tcp-common/net/rest/tls/client"
 	"github.com/hellgate75/go-tcp-common/log"
 	"github.com/hellgate75/go-tcp-common/net/rest/tls/server"
@@ -18,7 +19,7 @@ func main() {
 	caCert := "certs\\ca.crt"
 	serverCert := "certs\\server.pem"
 	serverKey := "certs\\server.key"
-	server := server.NewCaCert(true, caCert, serverLogger)
+	server := server.New(serverLogger)
 	client := client.NewWithCaCertificate(caCert, "127.0.0.1", fmt.Sprintf("%v", port), clientLogger)
 	mime := common.PLAIN_TEXT_MIME_TYPE
 	methods := make([]common.RestMethod, 0)
@@ -39,7 +40,13 @@ func main() {
 		server.Stop()
 	}()
 	go func() {
-		errS = server.StartTLS("", port, serverCert, serverKey)
+		serverCerts := []common2.CertificateKeyPair{
+			common2.CertificateKeyPair{
+			 Cert:	serverCert,
+			 Key: serverKey,
+			},
+		}
+		errS = server.StartTLS("", port, serverCerts, caCert, true)
 		if errS != nil {
 			serverLogger.Errorf("Unable to start server: %s", errS)
 			os.Exit(2)
