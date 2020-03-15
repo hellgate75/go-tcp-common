@@ -12,6 +12,6 @@ func NewTLSRestServer(logger log.Logger) common.RestServer {
 }
 
 // Generate New TLS Server using CA Certificate file
-func NewCaCertTLSRestServer(allowInsecureConnections bool, caCert string, logger log.Logger) common.RestServer {
-	return server.NewCaCert(allowInsecureConnections, caCert, logger)
+func NewTLSRestServerHandler(handler server.TLSHandleFunc, logger log.Logger) common.RestServer {
+	return server.NewHandleFunc(handler, logger)
 }

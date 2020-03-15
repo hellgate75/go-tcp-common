@@ -32,7 +32,7 @@ type RestCallback func(w http.ResponseWriter, req *http.Request, path string, ac
 type RestServer interface {
 	AddPath(path string, callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool
 	AddRootPath(callback RestCallback, accepts *common.MimeType, produces *common.MimeType, allowedMethods []common.RestMethod) bool
-	StartTLS(hostOrIpAddress string, port int32, cert string, key string) error
+	StartTLS(hostOrIpAddress string, port int32, certs []CertificateKeyPair, CaCertificate string, insecure bool) error
 	Start(hostOrIpAddress string, port int32) error
 	Stop() error
 	Shutdown() error
