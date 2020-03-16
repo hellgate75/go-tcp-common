@@ -2,12 +2,18 @@ package types
 
 import (
 	"github.com/hellgate75/go-tcp-common/net/common"
+	"os"
 	"time"
 )
 
 type NodeType byte
 type PortType byte
 type NodeState byte
+
+var(
+	DefaultFilePerm os.FileMode = 0664
+	DefaultFolderPerm os.FileMode = 0664
+)
 
 const (
 	ROLE_UNKNOWN NodeType = 0
@@ -71,11 +77,17 @@ type NodeInfo struct {
 }
 
 type NodePingInfo struct {
-	Role      NodeType  `yaml:"role,omitempty" json:"role,omitempty" xml:"role,chardata,omitempty"`
-	State     NodeState `yaml:"state,omitempty" json:"state,omitempty" xml:"state,chardata,omitempty"`
-	Active	  bool 		`yaml:"active,omitempty" json:"active,omitempty" xml:"active,chardata,omitempty"`
-	Ports     []Port	`yaml:"ports,omitempty" json:"ports,omitempty" xml:"ports,chardata,omitempty"`
-	IpAddress string    `yaml:"-" json:"-" xml:"-"`
-	Port	  int32     `yaml:"-" json:"-" xml:"-"`
-	Time	  time.Time `yaml:"-" json:"-" xml:"-"`
+	Role      NodeType  	`yaml:"role,omitempty" json:"role,omitempty" xml:"role,chardata,omitempty"`
+	State     NodeState 	`yaml:"state,omitempty" json:"state,omitempty" xml:"state,chardata,omitempty"`
+	Active	  bool 			`yaml:"active,omitempty" json:"active,omitempty" xml:"active,chardata,omitempty"`
+	Ports     []Port		`yaml:"ports,omitempty" json:"ports,omitempty" xml:"ports,chardata,omitempty"`
+	IpAddress string    	`yaml:"-" json:"-" xml:"-"`
+	Port	  int32     	`yaml:"-" json:"-" xml:"-"`
+	Time	  time.Time 	`yaml:"-" json:"-" xml:"-"`
+	Answer	  time.Duration `yaml:"-" json:"-" xml:"-"`
+}
+
+type NodeRequest struct {
+	IpAddress		string
+	Ports			[]int32
 }

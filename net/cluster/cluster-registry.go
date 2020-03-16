@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 )
+
 type nodeCache struct {
 	sync.Mutex
 	filePath	string
@@ -23,21 +24,117 @@ type nodeCache struct {
 	encoding	cio.ParserFormat
 }
 
+func (nc *nodeCache) RegistryFilePath() string {
+	return nc.filePath
+}
+
+func (nc *nodeCache) RegistryFileEncodingFormat() cio.ParserFormat {
+	return nc.encoding
+}
+
+func (nc *nodeCache) ChangeEncodingFormat(encodingFormat cio.ParserFormat) error {
+	if "" == string(encodingFormat) {
+		return errors.New("DiscoverReporter.ChangeEncodingFormat - Invalid empty encoding format!!")
+	}
+	var err error = nil
+	var locked bool = false
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("DiscoverReporter.ChangeEncodingFormat - Error: %v", r))
+		}
+		if locked {
+			nc.Unlock()
+		}
+	}()
+	nc.encoding = encodingFormat
+	if nc.IsPersistenceEnabled() {
+		nc.Lock()
+		locked = true
+		err = nc.save()
+		nc.Unlock()
+		locked = false
+	}
+	return err
+}
+
+
+func (nc *nodeCache) EnablePersistence(registryFile string) error {
+	if nc.IsPersistenceEnabled() {
+		return errors.New(fmt.Sprintf("DiscoverReporter.EnablePersistence - Persistence already enabled on: %s", nc.filePath))
+	}
+	if "" == registryFile {
+		return errors.New("DiscoverReporter.EnablePersistence - Invalid empty file for registry persistence!!")
+	}
+	var err error
+	var locked bool = false
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("DiscoverReporter.EnablePersistence - Error: %v", r))
+		}
+		if locked {
+			nc.Unlock()
+		}
+	}()
+	nc.Lock()
+	locked = true
+	if "" == nc.encoding {
+		nc.encoding = cio.ParserFormatYaml
+	}
+	nc.filePath = registryFile
+	err = nc.save()
+	nc.Unlock()
+	locked = false
+	return err
+}
+
+func (nc *nodeCache) DisablePersistence() error {
+	if ! nc.IsPersistenceEnabled() {
+		return errors.New("DiscoverReporter.DisablePersistence - Persistence is not enabled!!")
+	}
+	var err error
+	var locked bool = false
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("DiscoverReporter.EnablePersistence - Error: %v", r))
+		}
+		if locked {
+			nc.Unlock()
+		}
+	}()
+	nc.Lock()
+	locked = true
+	os.Remove(nc.filePath)
+	nc.filePath = ""
+	nc.Unlock()
+	locked = false
+	return err
+}
+
+func (nc *nodeCache) IsPersistenceEnabled() bool {
+	return "" != nc.filePath
+}
+
 func (nc *nodeCache) Register(n *types.Node) error {
 	if n == nil {
 		return errors.New("DiscoverReporter.Register - Nil node reference")
 	}
 	var err error
+	var locked bool = false
 	defer func(){
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("DiscoverReporter.Register - Error: %v", r))
 		}
-		nc.Unlock()
+		if locked {
+			nc.Unlock()
+		}
 	}()
-	nc.Lock()
 	nc.nodes = append(nc.nodes, *n)
 	if nc.persist {
+		nc.Lock()
+		locked = true
 		err = nc.save()
+		nc.Unlock()
+		locked = false
 	}
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.Register - Error: %s", err))
@@ -59,14 +156,16 @@ func (nc *nodeCache) Update(field string, filter regexp.Regexp, n types.Node) er
 	if err != nil {
 		return nil
 	}
-	locked = true
-	nc.Lock()
 	if len(nodes) > 0 {
 		for _, node := range nodes {
 			node.Update(&n)
 		}
 		if nc.persist {
+			nc.Lock()
+			locked = true
 			err = nc.save()
+			nc.Unlock()
+			locked = false
 		}
 	}
 	if err != nil {
@@ -77,16 +176,23 @@ func (nc *nodeCache) Update(field string, filter regexp.Regexp, n types.Node) er
 func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node, error) {
 	var err error
 	var out []*types.Node = make([]*types.Node, 0)
+	var locked bool = false
 	defer func(){
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("DiscoverReporter.Recover - Error: %v", r))
 		}
-		nc.Unlock()
+		if locked {
+			nc.Unlock()
+		}
 	}()
 	if nc.persist {
+		nc.Lock()
+		locked  = true
 		err = nc.load()
+		nc.Unlock()
+		locked  = false
 		if err != nil {
-			return out, errors.New(fmt.Sprintf("DiscoverReporter.Recover - Error: %s", err))
+			return out, err
 		}
 	}
 	if strings.Index(field, ".") > 0{
@@ -178,7 +284,7 @@ func (nc *nodeCache) load() error {
 	var err error
 	if _,err := os.Stat(nc.filePath); err != nil{
 		if err != nil {
-			return errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %s", err))
+			return errors.New(fmt.Sprintf("DiscoverReporter.load - (Registry file doesn't exist) Error: %s", err))
 		}
 	}
 	file, errF := os.Open(nc.filePath)
@@ -187,6 +293,12 @@ func (nc *nodeCache) load() error {
 			return errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %s", err))
 		}
 	}
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %v", r))
+		}
+		file.Close()
+	}()
 	var encoded []byte
 	encoded, err = ioutil.ReadAll(file)
 	if err != nil{
@@ -195,11 +307,6 @@ func (nc *nodeCache) load() error {
 		}
 	}
 	decoder := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(encoded))
-	defer func(){
-		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %v", r))
-		}
-	}()
 	dbuf := make([]byte, base64.StdEncoding.DecodedLen(len(encoded)))
 	count, err := decoder.Read(dbuf)
 	if err != nil && err != io.EOF {
@@ -209,9 +316,7 @@ func (nc *nodeCache) load() error {
 		var out []types.Node = make([]types.Node, 0)
 		itf, err := cio.Unmashall(dbuf, out, nc.encoding)
 		if err != nil{
-			if err != nil {
-				return errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %s", err))
-			}
+			return errors.New(fmt.Sprintf("DiscoverReporter.load - (Decoding Issues) Error: %s", err))
 		}
 		nc.nodes = itf.([]types.Node)
 	} else {
@@ -227,9 +332,13 @@ func (nc *nodeCache) save() error {
 	if "" == nc.filePath {
 		return errors.New("DiscoverReporter.save - Empty file ...")
 	}
+	var exists bool = cio.ExistsFile(nc.filePath)
+	if ! exists {
+		cio.CreateFileFolders(nc.filePath, types.DefaultFolderPerm)
+	}
 	dt, err := cio.Marshall(nc.nodes, nc.encoding)
 	if err != nil {
-		return errors.New(fmt.Sprintf("DiscoverReporter.save - Error: %s", err))
+		return errors.New(fmt.Sprintf("DiscoverReporter.save - (Encoding Issues) Error: %s", err))
 	}
 	data := &bytes.Buffer{}
 	encoder := base64.NewEncoder(base64.StdEncoding, data)
@@ -243,10 +352,10 @@ func (nc *nodeCache) save() error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.save - Encoder Write failed: %s", err))
 	}
-	if _,err = os.Stat(nc.filePath); err==nil{
-		os.Remove(nc.filePath)
+	if exists {
+		cio.DeleteOrTruncateFile(nc.filePath)
 	}
-	err = ioutil.WriteFile(nc.filePath, data.Bytes(), 0660)
+	err = ioutil.WriteFile(nc.filePath, data.Bytes(), types.DefaultFilePerm)
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.save - Error: %s", err))
 	}

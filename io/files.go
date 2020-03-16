@@ -1,6 +1,8 @@
 package io
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,6 +15,72 @@ import (
 func ExistsFile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// Delete a file or folder, within all sub items
+func CreateFileFolders(path string, perm os.FileMode) error {
+	if "" == path {
+		return errors.New("Empty file name unsupported!!")
+
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		if !info.IsDir() {
+			folder := filepath.Dir(path)
+			_, err = os.Stat(folder)
+			if err != nil {
+				return os.MkdirAll(folder, perm)
+			} else {
+				return errors.New(fmt.Sprintf("Folder %s already exists!!", path))
+			}
+		} else {
+			return os.MkdirAll(path, perm)
+		}
+	} else {
+		err = errors.New(fmt.Sprintf("File %s already exists!!", path))
+	}
+	return err
+}
+
+// Delete a file or folder, within all sub items
+func DeleteFile(path string) error {
+	if "" == path {
+		return errors.New("Empty file name unsupported!!")
+
+	}
+	info, err := os.Stat(path)
+	if err == nil {
+		if info.IsDir() {
+			return os.RemoveAll(path)
+		} else {
+			return os.Remove(path)
+		}
+	} else {
+		err = errors.New(fmt.Sprintf("File %s doesn't exists!!", path))
+	}
+	return err
+}
+
+// Delete a file (or truncate in case not suitable or delete folder, within all sub items
+func DeleteOrTruncateFile(path string) error {
+	if "" == path {
+		return errors.New("Empty file name unsupported!!")
+
+	}
+	info, err := os.Stat(path)
+	if err == nil {
+		if info.IsDir() {
+			return os.RemoveAll(path)
+		} else {
+			err = os.Remove(path)
+			if err != nil {
+				return os.Truncate(path, 0)
+			}
+		}
+	} else {
+		err = errors.New(fmt.Sprintf("File %s doesn't exists!!", path))
+	}
+	return err
 }
 
 // Retrieve current wotrking folder

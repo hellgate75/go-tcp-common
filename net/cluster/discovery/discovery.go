@@ -12,8 +12,23 @@ import (
 	"net/http"
 	"time"
 )
+func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, ports types.Ports, tlsConfig *tls.Config) ([]types.NodePingInfo, error) {
+	var portList []int32 = make([]int32, 0)
+	for port := ports.MinPort; port<=ports.MaxPort; port++ {
+		portList = append(portList, port)
+	}
+	addressList := common.ListAddresses(network)
+	var requests []types.NodeRequest = make([]types.NodeRequest, 0)
+	for _, ip := range addressList {
+		requests = append(requests, types.NodeRequest{
+			IpAddress: ip.String(),
+			Ports: portList,
+		})
+	}
+	return PingNodesList(requests, timeout, netType, tlsConfig)
+}
 
-func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, ports types.Ports, tlsConfig *tls.Config, collectInfo func()()) ([]types.NodePingInfo, error) {
+func PingNodesList(requests []types.NodeRequest, timeout time.Duration, netType string, tlsConfig *tls.Config) ([]types.NodePingInfo, error) {
 	var out []types.NodePingInfo = make([]types.NodePingInfo, 0)
 	if "" == netType {
 		netType="tcp"
@@ -24,7 +39,6 @@ func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, po
 			err = errors.New(fmt.Sprintf("net/cluster/discover.DiscoverNodes - Unable to discover nodes, Details: %v", r))
 		}
 	}()
-	addressList := common.ListAddresses(network)
 	client := http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
@@ -39,13 +53,15 @@ func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, po
 		time.Sleep(5 * time.Second)
 		client.CloseIdleConnections()
 	}()
-	for _, address := range addressList {
-		ip := address.String()
-		for port := ports.MinPort; port<=ports.MaxPort; port++ {
+	for _, request := range requests {
+		ip := request.IpAddress
+		for _, port := range request.Ports {
 			addressPort := fmt.Sprintf("%s:%v", ip, port)
 			url := fmt.Sprintf("%s://%s/ping", proto, addressPort)
 			var nodePingInfo *types.NodePingInfo
+			init := time.Now()
 			response, err := client.Get(url)
+			answer := time.Now().Sub(init)
 			if err == nil {
 				data, err := ioutil.ReadAll(response.Body)
 				if err == nil {
@@ -54,12 +70,12 @@ func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, po
 						nodePingInfo.IpAddress = ip
 						nodePingInfo.Port = port
 						nodePingInfo.Time = time.Now()
+						nodePingInfo.Answer = answer
 						out = append(out, *nodePingInfo)
 					}
 				}
 			}
 		}
-
 	}
 	return out, err
 }

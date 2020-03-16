@@ -12,6 +12,12 @@ type ClusterRegistry interface{
 	Update(field string, filter regexp.Regexp, n types.Node) error
 	Recover(field string, filter regexp.Regexp) ([]*types.Node, error)
 	List() []types.Node
+	EnablePersistence(registryFile string) error
+	DisablePersistence() error
+	IsPersistenceEnabled() bool
+	RegistryFilePath() string
+	RegistryFileEncodingFormat() cio.ParserFormat
+	ChangeEncodingFormat(encodingFormat cio.ParserFormat) error
 }
 
 type ClusterNode interface {
@@ -22,4 +28,9 @@ type ClusterNode interface {
 	Stop() error
 	List() []types.Node
 	UsedFormat() cio.ParserFormat
+	EnableRegistryPersistence(registryFile string) error
+	DisableRegistryPersistence() error
+	EnablePlugins(pluginFolder string, pluginExtension string) error
+	DisablePlugins() error
+	DumpConfigToFile(configFile string)
 }
