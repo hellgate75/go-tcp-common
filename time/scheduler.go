@@ -14,6 +14,7 @@ import (
 var (
 	CronUuidReparatorLeg int = 8
 	CronUuidStandardLength int = 40
+	CronTabDefaultPurgeTimeout time.Duration = 60 * time.Second
 )
 
 type CronUUID string
@@ -57,6 +58,7 @@ type CronData struct {
 	Delay			time.Duration
 	Interval		time.Duration
 	NumExecutions	int64
+	Since			time.Time
 }
 
 type CronJob interface {
@@ -73,15 +75,16 @@ type CronJob interface {
 }
 
 type CronTab interface {
-	AddJob(job CronJob) error
-	RemoveJob(uuid string) error
+	AddJob(job CronJob) bool
+	RemoveJob(uuid CronUUID) bool
 	ListJobs() []CronJob
 	Start() error
 	Stop() error
-	IsRunning() error
-	StartAllJobs()
-	KillAllJobs()
-	Equals(job CronTab) bool
+	IsRunning() bool
+	StartAllJobs()  bool
+	KillAllJobs()  bool
+	Purge() bool
+	Equals(tab CronTab) bool
 	Id() CronUUID
 	String() string
 	Report() string
@@ -99,20 +102,35 @@ func NewCronJob(label string, task func()(), time CronData, logger log.Logger) C
 	}
 }
 
+func NewCronTab(label string, logger log.Logger) CronTab {
+	return &cronTab {
+		_id: GenerateCronId(),
+		_name: label,
+		jobs: make([]CronJob, 0),
+		_running: false,
+		_logger: logger,
+	}
+}
+
 //func main() {
+//	initTime := time.Now().Add(25*time.Second)
 //	job := NewCronJob("Sample", func(){
 //		fmt.Print("Toc..")
 //	}, CronData{
 //		Delay: 0 * time.Second,
 //		Interval: 3 * time.Second,
 //		NumExecutions: 4,
+//		Since: initTime,
 //	}, nil)
 //	job.Start()
 //	fmt.Println("\nStarted ...")
-//	time.Sleep(20 * time.Second)
+//	time.Sleep(30 * time.Second)
 //	job.Stop()
 //	fmt.Println("\nFinish!!")
-//	time.Sleep(5 * time.Second)
+//	for job.IsRunning(){
+//		time.Sleep(time.Second)
+//	}
+//	time.Sleep(3*time.Second)
 //	fmt.Println("\nExit!!")
 //
 //}
