@@ -36,55 +36,55 @@ type Ports struct {
 }
 
 type Command struct {
-	Name      string
-	Command   string
-	Arguments []string
-	Method    common.RestMethod
-	Accepts   common.MimeType
-	Produces  common.MimeType
+	Name      string 			`yaml:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	Command   string			`yaml:"command,omitempty" json:"command,omitempty" xml:"command,omitempty"`
+	Arguments []string			`yaml:"arguments,omitempty" json:"arguments,omitempty" xml:"argument,omitempty"`
+	Method    common.RestMethod	`yaml:"method,omitempty" json:"method,omitempty" xml:"method,omitempty"`
+	Accepts   common.MimeType	`yaml:"accepts,omitempty" json:"accepts,omitempty" xml:"accepts,omitempty"`
+	Produces  common.MimeType	`yaml:"produces,omitempty" json:"produces,omitempty" xml:"produces,omitempty"`
 }
 
 type Service struct {
-	Port     Port
-	Commands []Command
+	Port     Port				`yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
+	Commands []Command			`yaml:"commands,omitempty" json:"commands,omitempty" xml:"commandGroup,omitempty"`
 }
 
 type Port struct {
-	Port  int32
-	Descr string
-	Type  PortType
+	Port  int32					`yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
+	Descr string				`yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	Type  PortType				`yaml:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 }
 
 type Node struct {
-	Name      string
-	IpAddress string
-	Port      int32
-	Ports     []Port
-	Role      NodeType
-	Services  []Service
-	Active    bool
-	LastCheck time.Time
-	State     NodeState
-	Info      NodeInfo
+	Name      string 			`yaml:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	IpAddress string 			`yaml:"ipAddress,omitempty" json:"ipAddress,omitempty" xml:"ip-address,omitempty"`
+	Port      int32				`yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
+	Ports     []Port			`yaml:"ports,omitempty" json:"ports,omitempty" xml:"portGroup,omitempty"`
+	Role      NodeType			`yaml:"ports,omitempty" json:"port,omitempty" xml:"ports,omitempty"`
+	Services  []Service			`yaml:"services,omitempty" json:"services,omitempty" xml:"serviceGroup,omitempty"`
+	Active    bool				`yaml:"active,omitempty" json:"active,omitempty" xml:"active,omitempty"`
+	LastCheck time.Time			`yaml:"lastCheck,omitempty" json:"lastCheck,omitempty" xml:"last-check,omitempty"`
+	State     NodeState			`yaml:"state,omitempty" json:"state,omitempty" xml:"state,omitempty"`
+	Info      NodeInfo			`yaml:"info,omitempty" json:"info,omitempty" xml:"infoGroup,omitempty"`
 }
 
 type NodeInfo struct {
-	OS       string    `yaml:"osName,omitempty" json:"osName,omitempty" xml:"os-name,chardata,omitempty"`
-	Arch     string    `yaml:"osArch,omitempty" json:"osArch,omitempty" xml:"os-arch,chardata,omitempty"`
-	GoPath   string    `yaml:"goPath,omitempty" json:"goPath,omitempty" xml:"go-path,chardata,omitempty"`
-	NumCPUs  int       `yaml:"numCpus,omitempty" json:"numCpus,omitempty" xml:"num-cpus,chardata,omitempty"`
-	Timezone string    `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,chardata,omitempty"`
+	OS       string    			`yaml:"osName,omitempty" json:"osName,omitempty" xml:"os-name,omitempty"`
+	Arch     string    			`yaml:"osArch,omitempty" json:"osArch,omitempty" xml:"os-arch,omitempty"`
+	GoPath   string    			`yaml:"goPath,omitempty" json:"goPath,omitempty" xml:"go-path,omitempty"`
+	NumCPUs  int       			`yaml:"numCpus,omitempty" json:"numCpus,omitempty" xml:"num-cpus,omitempty"`
+	Timezone string    			`yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 }
 
 type NodePingInfo struct {
-	Role      NodeType  	`yaml:"role,omitempty" json:"role,omitempty" xml:"role,chardata,omitempty"`
-	State     NodeState 	`yaml:"state,omitempty" json:"state,omitempty" xml:"state,chardata,omitempty"`
-	Active	  bool 			`yaml:"active,omitempty" json:"active,omitempty" xml:"active,chardata,omitempty"`
-	Ports     []Port		`yaml:"ports,omitempty" json:"ports,omitempty" xml:"ports,chardata,omitempty"`
-	IpAddress string    	`yaml:"-" json:"-" xml:"-"`
-	Port	  int32     	`yaml:"-" json:"-" xml:"-"`
-	Time	  time.Time 	`yaml:"-" json:"-" xml:"-"`
-	Answer	  time.Duration `yaml:"-" json:"-" xml:"-"`
+	Role      NodeType  		`yaml:"role,omitempty" json:"role,omitempty" xml:"role,omitempty"`
+	State     NodeState 		`yaml:"state,omitempty" json:"state,omitempty" xml:"state,omitempty"`
+	Active	  bool 				`yaml:"active,omitempty" json:"active,omitempty" xml:"active,omitempty"`
+	Ports     []Port			`yaml:"ports,omitempty" json:"ports,omitempty" xml:"ports,omitempty"`
+	IpAddress string    		`yaml:"-" json:"-" xml:"-"`
+	Port	  int32     		`yaml:"-" json:"-" xml:"-"`
+	Time	  time.Time 		`yaml:"-" json:"-" xml:"-"`
+	Answer	  time.Duration 	`yaml:"-" json:"-" xml:"-"`
 }
 
 type NodeRequest struct {

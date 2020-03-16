@@ -24,11 +24,11 @@ import (
 
 type apiServer struct{
 	sync.Mutex
-	router          *mux.Router
-	logger          log.Logger
-	server          *http.Server
-	routes          map[string]*common.HandlerRef
-	tlsMode			bool
+	Router  *mux.Router
+	logger  log.Logger
+	server  *http.Server
+	Routes  map[string]*common.HandlerRef
+	TlsMode bool
 }
 var (
 	DEFAULT_HEADER_READ_TIMEOUT time.Duration = 60 * time.Second
@@ -48,7 +48,7 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 				as.logger.Error(message)
 			}
 		} else {
-			as.tlsMode = true
+			as.TlsMode = true
 		}
 		if locked {
 			as.Unlock()
@@ -119,7 +119,7 @@ func (as *apiServer) StartTLS(ipAddress string, port int64, config *common.TLSCo
 	as.server = &http.Server{
 		Addr: fmt.Sprintf("%s:%v", ipAddress, port),
 		TLSConfig: tlsCfg,
-		Handler: as.router,
+		Handler: as.Router,
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
 			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
 			sessionKey, err := uuid.NewV4()
@@ -159,7 +159,7 @@ func (as *apiServer) Start(ipAddress string, port int64) error {
 				as.logger.Error(message)
 			}
 		} else {
-			as.tlsMode = false
+			as.TlsMode = false
 		}
 		if locked {
 			as.Unlock()
@@ -172,7 +172,7 @@ func (as *apiServer) Start(ipAddress string, port int64) error {
 	}
 	as.server = &http.Server{
 		Addr: fmt.Sprintf("%s:%v", ipAddress, port),
-		Handler: as.router,
+		Handler: as.Router,
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context{
 			ctx = context.WithValue(ctx, ncom.ContextRemoteAddress, c.RemoteAddr())
 			sessionKey, err := uuid.NewV4()
@@ -225,7 +225,7 @@ func (as *apiServer) IsRunning() bool {
 func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 	path := req.URL.Path
 	//method := ncom.RestMethod(req.Method)
-	if handlerStruct, ok := as.routes[path]; ok {
+	if handlerStruct, ok := as.Routes[path]; ok {
 
 		var requiredWebMethod string = req.Method
 
@@ -378,8 +378,8 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 }
 func (as *apiServer) AddApiAction(path string, action common.ApiAction, hasInternalAnswer bool, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
 	out := false
-	if _, ok := as.routes[path]; !ok {
-		as.routes[path] = &common.HandlerRef{
+	if _, ok := as.Routes[path]; !ok {
+		as.Routes[path] = &common.HandlerRef{
 			Method: method,
 			Path: path,
 			HasAnswer: hasInternalAnswer,
@@ -388,7 +388,7 @@ func (as *apiServer) AddApiAction(path string, action common.ApiAction, hasInter
 			Produces: produces,
 			Consumes: consumes,
 		}
-		as.router.HandleFunc(path, as.handle).Methods(string(*method))
+		as.Router.HandleFunc(path, as.handle).Methods(string(*method))
 		ok = true
 	}
 	
@@ -396,8 +396,8 @@ func (as *apiServer) AddApiAction(path string, action common.ApiAction, hasInter
 }
 func (as *apiServer) AddApiStream(path string, stream streams.DataStream, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
 	out := false
-	if _, ok := as.routes[path]; !ok {
-		as.routes[path] = &common.HandlerRef{
+	if _, ok := as.Routes[path]; !ok {
+		as.Routes[path] = &common.HandlerRef{
 			Method: method,
 			Path: path,
 			Action: nil,
@@ -405,7 +405,7 @@ func (as *apiServer) AddApiStream(path string, stream streams.DataStream, method
 			Produces: produces,
 			Consumes: consumes,
 		}
-		as.router.HandleFunc(path, as.handle).Methods(string(*method))
+		as.Router.HandleFunc(path, as.handle).Methods(string(*method))
 		ok = true
 	}
 	
@@ -414,8 +414,8 @@ func (as *apiServer) AddApiStream(path string, stream streams.DataStream, method
 
 func NewApiServer(logger log.Logger) common.ApiServer {
 	return &apiServer{
-		router: mux.NewRouter().StrictSlash(true),
+		Router: mux.NewRouter().StrictSlash(true),
 		logger: logger,
-		routes: make(map[string]*common.HandlerRef),
+		Routes: make(map[string]*common.HandlerRef),
 	}
 }

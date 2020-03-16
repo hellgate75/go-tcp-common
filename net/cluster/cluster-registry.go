@@ -18,18 +18,17 @@ import (
 
 type nodeCache struct {
 	sync.Mutex
-	filePath	string
-	persist		bool
-	nodes		[]types.Node
-	encoding	cio.ParserFormat
+	FilePath string				`yaml:"filePath,omitempty" json:"filePath,omitempty" xml:"file-path,omitempty"`
+	Nodes    []types.Node		`yaml:"nodes,omitempty" json:"nodes,omitempty" xml:"node,omitempty"`
+	Encoding cio.ParserFormat	`yaml:"encoding,omitempty" json:"encoding,omitempty" xml:"encoding,omitempty"`
 }
 
 func (nc *nodeCache) RegistryFilePath() string {
-	return nc.filePath
+	return nc.FilePath
 }
 
 func (nc *nodeCache) RegistryFileEncodingFormat() cio.ParserFormat {
-	return nc.encoding
+	return nc.Encoding
 }
 
 func (nc *nodeCache) ChangeEncodingFormat(encodingFormat cio.ParserFormat) error {
@@ -46,7 +45,7 @@ func (nc *nodeCache) ChangeEncodingFormat(encodingFormat cio.ParserFormat) error
 			nc.Unlock()
 		}
 	}()
-	nc.encoding = encodingFormat
+	nc.Encoding = encodingFormat
 	if nc.IsPersistenceEnabled() {
 		nc.Lock()
 		locked = true
@@ -60,7 +59,7 @@ func (nc *nodeCache) ChangeEncodingFormat(encodingFormat cio.ParserFormat) error
 
 func (nc *nodeCache) EnablePersistence(registryFile string) error {
 	if nc.IsPersistenceEnabled() {
-		return errors.New(fmt.Sprintf("DiscoverReporter.EnablePersistence - Persistence already enabled on: %s", nc.filePath))
+		return errors.New(fmt.Sprintf("DiscoverReporter.EnablePersistence - Persistence already enabled on: %s", nc.FilePath))
 	}
 	if "" == registryFile {
 		return errors.New("DiscoverReporter.EnablePersistence - Invalid empty file for registry persistence!!")
@@ -77,10 +76,10 @@ func (nc *nodeCache) EnablePersistence(registryFile string) error {
 	}()
 	nc.Lock()
 	locked = true
-	if "" == nc.encoding {
-		nc.encoding = cio.ParserFormatYaml
+	if "" == nc.Encoding {
+		nc.Encoding = cio.ParserFormatYaml
 	}
-	nc.filePath = registryFile
+	nc.FilePath = registryFile
 	err = nc.save()
 	nc.Unlock()
 	locked = false
@@ -103,15 +102,15 @@ func (nc *nodeCache) DisablePersistence() error {
 	}()
 	nc.Lock()
 	locked = true
-	os.Remove(nc.filePath)
-	nc.filePath = ""
+	os.Remove(nc.FilePath)
+	nc.FilePath = ""
 	nc.Unlock()
 	locked = false
 	return err
 }
 
 func (nc *nodeCache) IsPersistenceEnabled() bool {
-	return "" != nc.filePath
+	return "" != nc.FilePath
 }
 
 func (nc *nodeCache) Register(n *types.Node) error {
@@ -128,8 +127,8 @@ func (nc *nodeCache) Register(n *types.Node) error {
 			nc.Unlock()
 		}
 	}()
-	nc.nodes = append(nc.nodes, *n)
-	if nc.persist {
+	nc.Nodes = append(nc.Nodes, *n)
+	if nc.IsPersistenceEnabled() {
 		nc.Lock()
 		locked = true
 		err = nc.save()
@@ -160,7 +159,7 @@ func (nc *nodeCache) Update(field string, filter regexp.Regexp, n types.Node) er
 		for _, node := range nodes {
 			node.Update(&n)
 		}
-		if nc.persist {
+		if nc.IsPersistenceEnabled() {
 			nc.Lock()
 			locked = true
 			err = nc.save()
@@ -185,7 +184,7 @@ func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node,
 			nc.Unlock()
 		}
 	}()
-	if nc.persist {
+	if nc.IsPersistenceEnabled() {
 		nc.Lock()
 		locked  = true
 		err = nc.load()
@@ -198,7 +197,7 @@ func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node,
 	if strings.Index(field, ".") > 0{
 		if len(field) > 9 && strings.ToLower(field)[0:9] == "services." {
 			sfield := field[10:]
-			for _, node := range nc.nodes {
+			for _, node := range nc.Nodes {
 				NodeLoop:
 				for _, service := range node.Services {
 					if len(sfield) > 5 && strings.ToLower(field)[0:5] == "port." {
@@ -221,7 +220,7 @@ func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node,
 			}
 		} else if len(field) > 6 && strings.ToLower(field)[0:6] == "ports." {
 			sfield := field[7:]
-			for _, node := range nc.nodes {
+			for _, node := range nc.Nodes {
 				NodeLoop2:
 				for _, port := range node.Ports {
 					if matchInInterface(&port, sfield, filter) {
@@ -232,7 +231,7 @@ func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node,
 			}
 		} else  if len(field) > 5  && strings.ToLower(field)[0:5] == "info." {
 			sfield := field[6:]
-			for _, node := range nc.nodes {
+			for _, node := range nc.Nodes {
 				if matchInInterface(node.Info, sfield, filter) {
 					out = append(out, &node)
 				}
@@ -241,7 +240,7 @@ func (nc *nodeCache) Recover(field string, filter regexp.Regexp) ([]*types.Node,
 			return out, errors.New(fmt.Sprintf("Field doesn't start with 'nodes': <%s>", field))
 		}
 	} else {
-		for _, node := range nc.nodes {
+		for _, node := range nc.Nodes {
 			if matchInInterface(&node, field, filter) {
 					out = append(out, &node)
 			}
@@ -273,21 +272,21 @@ func (nc *nodeCache) List() []types.Node {
 		nc.Unlock()
 	}()
 	nc.Lock()
-	return nc.nodes
+	return nc.Nodes
 }
 
 
 func (nc *nodeCache) load() error {
-	if "" == nc.filePath {
+	if "" == nc.FilePath {
 		return errors.New("DiscoverReporter.load - Empty file ...")
 	}
 	var err error
-	if _,err := os.Stat(nc.filePath); err != nil{
+	if _,err := os.Stat(nc.FilePath); err != nil{
 		if err != nil {
 			return errors.New(fmt.Sprintf("DiscoverReporter.load - (Registry file doesn't exist) Error: %s", err))
 		}
 	}
-	file, errF := os.Open(nc.filePath)
+	file, errF := os.Open(nc.FilePath)
 	if errF != nil{
 		if err != nil {
 			return errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %s", err))
@@ -314,13 +313,13 @@ func (nc *nodeCache) load() error {
 	}
 	if count > 0 {
 		var out []types.Node = make([]types.Node, 0)
-		itf, err := cio.Unmashall(dbuf, out, nc.encoding)
+		itf, err := cio.Unmashall(dbuf, out, nc.Encoding)
 		if err != nil{
 			return errors.New(fmt.Sprintf("DiscoverReporter.load - (Decoding Issues) Error: %s", err))
 		}
-		nc.nodes = itf.([]types.Node)
+		nc.Nodes = itf.([]types.Node)
 	} else {
-		nc.nodes = make([]types.Node, 0)
+		nc.Nodes = make([]types.Node, 0)
 	}
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.load - Error: %s", err))
@@ -329,14 +328,14 @@ func (nc *nodeCache) load() error {
 }
 
 func (nc *nodeCache) save() error {
-	if "" == nc.filePath {
+	if "" == nc.FilePath {
 		return errors.New("DiscoverReporter.save - Empty file ...")
 	}
-	var exists bool = cio.ExistsFile(nc.filePath)
+	var exists bool = cio.ExistsFile(nc.FilePath)
 	if ! exists {
-		cio.CreateFileFolders(nc.filePath, types.DefaultFolderPerm)
+		cio.CreateFileFolders(nc.FilePath, types.DefaultFolderPerm)
 	}
-	dt, err := cio.Marshall(nc.nodes, nc.encoding)
+	dt, err := cio.Marshall(nc.Nodes, nc.Encoding)
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.save - (Encoding Issues) Error: %s", err))
 	}
@@ -353,9 +352,9 @@ func (nc *nodeCache) save() error {
 		return errors.New(fmt.Sprintf("DiscoverReporter.save - Encoder Write failed: %s", err))
 	}
 	if exists {
-		cio.DeleteOrTruncateFile(nc.filePath)
+		cio.DeleteOrTruncateFile(nc.FilePath)
 	}
-	err = ioutil.WriteFile(nc.filePath, data.Bytes(), types.DefaultFilePerm)
+	err = ioutil.WriteFile(nc.FilePath, data.Bytes(), types.DefaultFilePerm)
 	if err != nil {
 		return errors.New(fmt.Sprintf("DiscoverReporter.save - Error: %s", err))
 	}
@@ -364,26 +363,23 @@ func (nc *nodeCache) save() error {
 
 func NewClusterRegistryWithInternal(file string, encoding	cio.ParserFormat) ClusterRegistry {
 	return &nodeCache{
-		nodes: make([]types.Node, 0),
-		encoding: encoding,
-		filePath: file,
-		persist: true,
+		Nodes:    make([]types.Node, 0),
+		Encoding: encoding,
+		FilePath: file,
 	}
 }
 func NewClusterRegistry(file string) ClusterRegistry {
 	return &nodeCache{
-		nodes: make([]types.Node, 0),
-		encoding: cio.ParserFormatYaml,
-		filePath: file,
-		persist: true,
+		Nodes:    make([]types.Node, 0),
+		Encoding: cio.ParserFormatYaml,
+		FilePath: file,
 	}
 }
 
 func NewInMemoryClusterRegistry() ClusterRegistry {
 	return &nodeCache{
-		nodes: make([]types.Node, 0),
-		encoding: cio.ParserFormat("NONE"),
-		filePath: "",
-		persist: false,
+		Nodes:    make([]types.Node, 0),
+		Encoding: cio.ParserFormat("NONE"),
+		FilePath: "",
 	}
 }
