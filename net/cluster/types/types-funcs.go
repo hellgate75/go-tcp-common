@@ -1,6 +1,10 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+	"time"
+)
 
 func (ni NodeInfo) String() string {
 	return fmt.Sprintf("NodeInfo{OS: \"%s\", Arch: \"%s\", GoPath: \"%s\", NumCPUs: %v, TimeZone: \"%s\"}",
@@ -74,3 +78,13 @@ func (n *Node) Update(n1 *Node) {
 	}
 }
 
+func NewNodeInfo() NodeInfo {
+	tz, _ := time.Now().Zone()
+	return NodeInfo{
+		OS: runtime.GOOS,
+		NumCPUs: runtime.NumCPU(),
+		Arch: runtime.GOARCH,
+		GoPath: runtime.GOROOT(),
+		Timezone: tz,
+	}
+}

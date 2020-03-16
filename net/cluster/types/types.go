@@ -52,6 +52,7 @@ type Port struct {
 type Node struct {
 	Name      string
 	IpAddress string
+	Port      int32
 	Ports     []Port
 	Role      NodeType
 	Services  []Service
@@ -62,10 +63,19 @@ type Node struct {
 }
 
 type NodeInfo struct {
-	OS       string `yaml:"osName,omitempty" json:"osName,omitempty" xml:"os-name,chardata,omitempty"`
-	Arch     string `yaml:"osArch,omitempty" json:"osArch,omitempty" xml:"os-arch,chardata,omitempty"`
-	GoPath   string `yaml:"goPath,omitempty" json:"goPath,omitempty" xml:"go-path,chardata,omitempty"`
-	NumCPUs  int    `yaml:"numCpus,omitempty" json:"numCpus,omitempty" xml:"num-cpus,chardata,omitempty"`
-	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,chardata,omitempty"`
+	OS       string    `yaml:"osName,omitempty" json:"osName,omitempty" xml:"os-name,chardata,omitempty"`
+	Arch     string    `yaml:"osArch,omitempty" json:"osArch,omitempty" xml:"os-arch,chardata,omitempty"`
+	GoPath   string    `yaml:"goPath,omitempty" json:"goPath,omitempty" xml:"go-path,chardata,omitempty"`
+	NumCPUs  int       `yaml:"numCpus,omitempty" json:"numCpus,omitempty" xml:"num-cpus,chardata,omitempty"`
+	Timezone string    `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,chardata,omitempty"`
 }
 
+type NodePingInfo struct {
+	Role      NodeType  `yaml:"role,omitempty" json:"role,omitempty" xml:"role,chardata,omitempty"`
+	State     NodeState `yaml:"state,omitempty" json:"state,omitempty" xml:"state,chardata,omitempty"`
+	Active	  bool 		`yaml:"active,omitempty" json:"active,omitempty" xml:"active,chardata,omitempty"`
+	Ports     []Port	`yaml:"ports,omitempty" json:"ports,omitempty" xml:"ports,chardata,omitempty"`
+	IpAddress string    `yaml:"-" json:"-" xml:"-"`
+	Port	  int32     `yaml:"-" json:"-" xml:"-"`
+	Time	  time.Time `yaml:"-" json:"-" xml:"-"`
+}

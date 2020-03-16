@@ -5,9 +5,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/hellgate75/go-tcp-common/common"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
+	"plugin"
 	"strings"
 )
 
@@ -20,6 +22,130 @@ const(
 
 )
 
+var DefaultPluginsFolder string = common.GetCurrentPath() + string(os.PathListSeparator) + "modules"
+var DefaultLibraryExtension string = common.GetShareLibExt()
+
+// Describe the exposed Plugin interface proxy function (expected function name = ParserPlugin
+type ParserPlugin func(format ParserFormat) (FormatParser, error)
+
+// Describe the exposed Plugin interface proxy function (expected function name = PluginsCollector
+type PluginsCollector func() ([]FormatParser, error)
+
+//Describes as a Plugin Parser executive must expose functions
+type FormatParser interface{
+	// Provided format
+	ParserFormat() ParserFormat
+	// Mashal an interface to the specified format in bytes
+	Marshall(itf interface{}) ([]byte, error)
+	// Mashal a byte array into the specified interface, returning the unmashalled element
+	Unmashall(code []byte, itf interface{}) (interface{}, error)
+}
+
+var pluginsCache map[ParserFormat]FormatParser
+
+var pluginsList []FormatParser = make([]FormatParser, 0)
+
+//Looks up for plugin by a given ParserFormat, using  eventually pluginsFolder and library exception excluded the dot,
+// in case one of them is empty string it will be replaced with the package DefaultPluginsFolder and DefaultLibraryExtension variables
+func CollectAllPlugins(pluginsFolder string, libExtension string) ([]FormatParser, error) {
+	if len(pluginsList) > 0 {
+		return pluginsList, nil
+	}
+	var out []FormatParser = make([]FormatParser, 0)
+	var err error
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("net/cluster/discover.RequireServiceInfo - Unable to connect given nodes, Details: %v", r))
+		}
+	}()
+	if "" == pluginsFolder {
+		pluginsFolder = DefaultPluginsFolder
+	}
+	if "" == libExtension {
+		pluginsFolder = DefaultLibraryExtension
+	}
+	if ! ExistsFile(pluginsFolder) {
+		return out, errors.New(fmt.Sprintf("File %s doesn't exist!!", pluginsFolder))
+	}
+	lext := strings.ToLower(fmt.Sprintf(".%s", libExtension))
+	if IsFolder(pluginsFolder) {
+		libraries := GetMatchedFiles(pluginsFolder, true, func(path string) bool{
+			return strings.ToLower(path[len(path)-len(lext):]) == lext
+		})
+		for _, lib := range libraries {
+			plugin, err := plugin.Open(lib)
+			if err == nil {
+				symbol, err := plugin.Lookup("PluginsCollector")
+				if err == nil {
+					parserPlugin := symbol.(PluginsCollector)
+					parsers, err := parserPlugin()
+					if err == nil {
+						for _, parser := range parsers {
+							if parser == nil {
+								out = append(out, parser)
+							}
+						}
+					}
+				}
+
+			}
+		}
+	} else {
+		return out, errors.New(fmt.Sprintf("File %s is not a folder!!", pluginsFolder))
+	}
+	return out, err
+}
+
+//Looks up for plugin by a given ParserFormat, using  eventually pluginsFolder and library exception excluded the dot,
+// in case one of them is empty string it will be replaced with the package DefaultPluginsFolder and DefaultLibraryExtension variables
+func LookupInPlugins(format ParserFormat, pluginsFolder string, libExtension string) (FormatParser, error) {
+	if plugin, ok := pluginsCache[format]; ok {
+		return plugin, nil
+	}
+	var err error
+	defer func(){
+		if r := recover(); r != nil {
+			err = errors.New(fmt.Sprintf("net/cluster/discover.RequireServiceInfo - Unable to connect given nodes, Details: %v", r))
+		}
+	}()
+	if "" == pluginsFolder {
+		pluginsFolder = DefaultPluginsFolder
+	}
+	if "" == libExtension {
+		pluginsFolder = DefaultLibraryExtension
+	}
+	if ! ExistsFile(pluginsFolder) {
+		return nil, errors.New(fmt.Sprintf("File %s doesn't exist!!", pluginsFolder))
+	}
+	lext := strings.ToLower(fmt.Sprintf(".%s", libExtension))
+	if IsFolder(pluginsFolder) {
+		libraries := GetMatchedFiles(pluginsFolder, true, func(path string) bool{
+			return strings.ToLower(path[len(path)-len(lext):]) == lext
+		})
+		for _, lib := range libraries {
+			plugin, err := plugin.Open(lib)
+			if err == nil {
+				symbol, err := plugin.Lookup("ParserPlugin")
+				if err == nil {
+					parserPlugin := symbol.(ParserPlugin)
+					parser, err := parserPlugin(format)
+					if err == nil {
+						pluginsCache[format]=parser
+						return parser, nil
+					}
+				}
+
+			}
+		}
+	} else {
+		return nil, errors.New(fmt.Sprintf("File %s is not a folder!!", pluginsFolder))
+	}
+	if err != nil {
+		return nil ,err
+	}
+	return nil, errors.New(fmt.Sprintf("No match found for parser format: %v", format))
+}
+
 // Marshall an object instance tranforming in byte array, reporting eventually errors based on
 // the required parser format
 func Marshall(itf interface{}, format ParserFormat) ([]byte, error) {
@@ -31,6 +157,15 @@ func Marshall(itf interface{}, format ParserFormat) ([]byte, error) {
 		text, err = ToYaml(itf)
 	} else if strings.ToUpper(string(format)) == string(ParserFormatXml) {
 		text, err = ToXml(itf)
+	} else if parser, err := LookupInPlugins(format, "", ""); err == nil && parser != nil {
+		bytes, errB := parser.Marshall(itf)
+		if errB != nil {
+			err = errB
+			text = ""
+		} else {
+			err = nil
+			text = string(bytes)
+		}
 	} else {
 		return []byte{}, errors.New(fmt.Sprintf("Unable to identify following parser format: %v", format))
 	}
@@ -60,6 +195,8 @@ func Unmashall(code []byte, itf interface{}, format ParserFormat) (interface{}, 
 		itf, err = FromYamlCode(string(code), itf)
 	} else if strings.ToUpper(string(format)) == string(ParserFormatXml) {
 		itf, err = FromXmlCode(string(code), itf)
+	} else if parser, err := LookupInPlugins(format, "", ""); err ==nil && parser != nil {
+		itf, err = parser.Unmashall(code, itf)
 	} else {
 		return nil, errors.New(fmt.Sprintf("Unable to identify following parser format: %v", format))
 	}
