@@ -55,7 +55,7 @@ func CollectAllPlugins(pluginsFolder string, libExtension string) ([]FormatParse
 	var err error
 	defer func(){
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("net/cluster/discover.RequireServiceInfo - Unable to connect given nodes, Details: %v", r))
+			err = errors.New(fmt.Sprintf("io.CollectAllPlugins - Unable to read plugins, Details: %v", r))
 		}
 	}()
 	if "" == pluginsFolder {
@@ -65,7 +65,7 @@ func CollectAllPlugins(pluginsFolder string, libExtension string) ([]FormatParse
 		pluginsFolder = DefaultLibraryExtension
 	}
 	if ! ExistsFile(pluginsFolder) {
-		return out, errors.New(fmt.Sprintf("File %s doesn't exist!!", pluginsFolder))
+		return out, errors.New(fmt.Sprintf("io.CollectAllPlugins - File %s doesn't exist!!", pluginsFolder))
 	}
 	lext := strings.ToLower(fmt.Sprintf(".%s", libExtension))
 	if IsFolder(pluginsFolder) {
@@ -91,7 +91,7 @@ func CollectAllPlugins(pluginsFolder string, libExtension string) ([]FormatParse
 			}
 		}
 	} else {
-		return out, errors.New(fmt.Sprintf("File %s is not a folder!!", pluginsFolder))
+		return out, errors.New(fmt.Sprintf("io.CollectAllPlugins - File %s is not a folder!!", pluginsFolder))
 	}
 	return out, err
 }
@@ -105,7 +105,7 @@ func LookupInPlugins(format ParserFormat, pluginsFolder string, libExtension str
 	var err error
 	defer func(){
 		if r := recover(); r != nil {
-			err = errors.New(fmt.Sprintf("net/cluster/discover.RequireServiceInfo - Unable to connect given nodes, Details: %v", r))
+			err = errors.New(fmt.Sprintf("io.LookupInPlugins - Unable to read plugins, Details: %v", r))
 		}
 	}()
 	if "" == pluginsFolder {
@@ -115,7 +115,7 @@ func LookupInPlugins(format ParserFormat, pluginsFolder string, libExtension str
 		pluginsFolder = DefaultLibraryExtension
 	}
 	if ! ExistsFile(pluginsFolder) {
-		return nil, errors.New(fmt.Sprintf("File %s doesn't exist!!", pluginsFolder))
+		return nil, errors.New(fmt.Sprintf("io.LookupInPlugins - File %s doesn't exist!!", pluginsFolder))
 	}
 	lext := strings.ToLower(fmt.Sprintf(".%s", libExtension))
 	if IsFolder(pluginsFolder) {
@@ -138,12 +138,12 @@ func LookupInPlugins(format ParserFormat, pluginsFolder string, libExtension str
 			}
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("File %s is not a folder!!", pluginsFolder))
+		return nil, errors.New(fmt.Sprintf("io.LookupInPlugins - File %s is not a folder!!", pluginsFolder))
 	}
 	if err != nil {
 		return nil ,err
 	}
-	return nil, errors.New(fmt.Sprintf("No match found for parser format: %v", format))
+	return nil, errors.New(fmt.Sprintf("io.LookupInPlugins - No match found for parser format: %v", format))
 }
 
 // Marshall an object instance tranforming in byte array, reporting eventually errors based on

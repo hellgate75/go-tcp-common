@@ -36,12 +36,12 @@ type Ports struct {
 }
 
 type Command struct {
-	Name      string 			`yaml:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	Command   string			`yaml:"command,omitempty" json:"command,omitempty" xml:"command,omitempty"`
-	Arguments []string			`yaml:"arguments,omitempty" json:"arguments,omitempty" xml:"argument,omitempty"`
-	Method    common.RestMethod	`yaml:"method,omitempty" json:"method,omitempty" xml:"method,omitempty"`
-	Accepts   common.MimeType	`yaml:"accepts,omitempty" json:"accepts,omitempty" xml:"accepts,omitempty"`
-	Produces  common.MimeType	`yaml:"produces,omitempty" json:"produces,omitempty" xml:"produces,omitempty"`
+	Name      string 				`yaml:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	Command   string				`yaml:"command,omitempty" json:"command,omitempty" xml:"command,omitempty"`
+	Arguments []string				`yaml:"arguments,omitempty" json:"arguments,omitempty" xml:"argument,omitempty"`
+	Method    []common.RestMethod	`yaml:"methods,omitempty" json:"methods,omitempty" xml:"methods,omitempty"`
+	Accepts   common.MimeType		`yaml:"accepts,omitempty" json:"accepts,omitempty" xml:"accepts,omitempty"`
+	Produces  common.MimeType		`yaml:"produces,omitempty" json:"produces,omitempty" xml:"produces,omitempty"`
 }
 
 type Service struct {
@@ -51,7 +51,7 @@ type Service struct {
 
 type Port struct {
 	Port  int32					`yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
-	Descr string				`yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	Description string			`yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 	Type  PortType				`yaml:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 }
 

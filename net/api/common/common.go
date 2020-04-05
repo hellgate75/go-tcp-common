@@ -14,19 +14,13 @@ type TLSConfig struct {
 	UseInsecure     bool
 }
 
-// Interface that describes the callback action of an API call
-type ApiAction interface{
-	// Execute API command with API given arguments
-	Run(Args ...interface{}) error
-}
-
 type ApiServer interface{
 	Start(ipAddress string, port int64) error
 	StartTLS(ipAddress string, port int64, config *TLSConfig) error
 	Stop() error
 	Shutdown() error
 	IsRunning() bool
-	AddApiAction(path string, action ApiAction, hasInternalAnswer bool, method *common.RestMethod, produces *common.MimeType, consumes *common.MimeType) bool
+	AddApiAction(path string, action common.ApiAction, hasInternalAnswer bool, method *common.RestMethod, produces *common.MimeType, consumes *common.MimeType) bool
 	AddApiStream(path string, stream streams.DataStream, method *common.RestMethod, produces *common.MimeType, consumes *common.MimeType) bool
 }
 
@@ -39,7 +33,7 @@ type APIClient interface {
 
 type HandlerRef struct{
 	Path        string
-	Action      ApiAction
+	Action      common.ApiAction
 	HasAnswer   bool
 	Stream      streams.DataStream
 	Method      *common.RestMethod

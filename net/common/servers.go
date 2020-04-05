@@ -95,3 +95,9 @@ type RestMethod string
 // Rest Protocol Type
 type RestProtocol string
 
+// Interface that describes the callback action of an API call
+type ApiAction interface {
+	// Execute API command with API given arguments
+	Run(Args ...interface{}) error
+}
+

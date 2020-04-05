@@ -376,7 +376,7 @@ func (as *apiServer) handle(w http.ResponseWriter, req *http.Request)(){
 		ncom.SubmitFaiure(w, http.StatusNotFound, "NOT_FOUND")
 	}
 }
-func (as *apiServer) AddApiAction(path string, action common.ApiAction, hasInternalAnswer bool, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
+func (as *apiServer) AddApiAction(path string, action ncom.ApiAction, hasInternalAnswer bool, method *ncom.RestMethod, produces *ncom.MimeType, consumes *ncom.MimeType) bool {
 	out := false
 	if _, ok := as.Routes[path]; !ok {
 		as.Routes[path] = &common.HandlerRef{
