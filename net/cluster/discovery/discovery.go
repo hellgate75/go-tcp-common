@@ -12,29 +12,30 @@ import (
 	"net/http"
 	"time"
 )
+
 func DiscoverNodes(network *net.IPNet, timeout time.Duration, netType string, ports types.Ports, tlsConfig *tls.Config) ([]types.NodePingInfo, error) {
-	var portList []int32 = make([]int32, 0)
-	for port := ports.MinPort; port<=ports.MaxPort; port++ {
+	var portList = make([]int32, 0)
+	for port := ports.MinPort; port <= ports.MaxPort; port++ {
 		portList = append(portList, port)
 	}
 	addressList := common.ListAddresses(network)
-	var requests []types.NodeRequest = make([]types.NodeRequest, 0)
+	var requests = make([]types.NodeRequest, 0)
 	for _, ip := range addressList {
 		requests = append(requests, types.NodeRequest{
 			IpAddress: ip.String(),
-			Ports: portList,
+			Ports:     portList,
 		})
 	}
 	return PingNodesList(requests, timeout, netType, tlsConfig)
 }
 
 func PingNodesList(requests []types.NodeRequest, timeout time.Duration, netType string, tlsConfig *tls.Config) ([]types.NodePingInfo, error) {
-	var out []types.NodePingInfo = make([]types.NodePingInfo, 0)
+	var out = make([]types.NodePingInfo, 0)
 	if "" == netType {
-		netType="tcp"
+		netType = "tcp"
 	}
 	var err error
-	defer func(){
+	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("net/cluster/discover.DiscoverNodes - Unable to discover nodes, Details: %v", r))
 		}
@@ -49,7 +50,7 @@ func PingNodesList(requests []types.NodeRequest, timeout time.Duration, netType 
 	if tlsConfig != nil {
 		proto = "https"
 	}
-	defer func(){
+	defer func() {
 		time.Sleep(5 * time.Second)
 		client.CloseIdleConnections()
 	}()
@@ -82,8 +83,8 @@ func PingNodesList(requests []types.NodeRequest, timeout time.Duration, netType 
 
 func RequireServiceInfo(nodesInfoList []types.NodePingInfo, timeout time.Duration, tlsConfig *tls.Config) ([]types.Node, error) {
 	var err error
-	var out []types.Node = make([]types.Node, 0)
-	defer func(){
+	var out = make([]types.Node, 0)
+	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("net/cluster/discover.RequireServiceInfo - Unable to connect given nodes, Details: %v", r))
 		}
@@ -94,7 +95,7 @@ func RequireServiceInfo(nodesInfoList []types.NodePingInfo, timeout time.Duratio
 		},
 		Timeout: timeout,
 	}
-	defer func(){
+	defer func() {
 		time.Sleep(5 * time.Second)
 		client.CloseIdleConnections()
 	}()
@@ -108,14 +109,14 @@ func RequireServiceInfo(nodesInfoList []types.NodePingInfo, timeout time.Duratio
 		response, err := client.Get(url)
 		if err == nil {
 			var nodeInfo *types.NodeInfo
-			if ( response.StatusCode == 200) {
+			if response.StatusCode == 200 {
 				data, err := ioutil.ReadAll(response.Body)
 				if err == nil {
 					nodeInfo = parseNodeInfoWithAllFormats(data)
 				}
 
 			}
-			var services []types.Service = make([]types.Service, 0)
+			var services = make([]types.Service, 0)
 			url2 := fmt.Sprintf("%s://%s/services", proto, service)
 			response2, err := client.Get(url2)
 			if err == nil {
@@ -127,14 +128,14 @@ func RequireServiceInfo(nodesInfoList []types.NodePingInfo, timeout time.Duratio
 				}
 			}
 			node := types.Node{
-				Name: fmt.Sprintf("%s_%v", nodePingInfo.IpAddress, nodePingInfo.Port),
+				Name:      fmt.Sprintf("%s_%v", nodePingInfo.IpAddress, nodePingInfo.Port),
 				IpAddress: nodePingInfo.IpAddress,
-				Port: nodePingInfo.Port,
-				Ports: nodePingInfo.Ports,
-				Role: nodePingInfo.Role,
-				Services: services,
-				State: nodePingInfo.State,
-				Active: nodePingInfo.Active,
+				Port:      nodePingInfo.Port,
+				Ports:     nodePingInfo.Ports,
+				Role:      nodePingInfo.Role,
+				Services:  services,
+				State:     nodePingInfo.State,
+				Active:    nodePingInfo.Active,
 				LastCheck: nodePingInfo.Time,
 			}
 			if nodeInfo != nil {
@@ -146,26 +147,26 @@ func RequireServiceInfo(nodesInfoList []types.NodePingInfo, timeout time.Duratio
 	return out, err
 }
 
-var parsersCache []io.FormatParser = make([]io.FormatParser, 0)
+var parsersCache = make([]io.FormatParser, 0)
 
 func parseNodePingInfoWithAllFormats(code []byte) *types.NodePingInfo {
 	var itfIn = types.NodePingInfo{}
 	itf, err := io.FromJsonCode(string(code), itfIn)
 	if err == nil {
-		var nodePingInfo types.NodePingInfo = itf.(types.NodePingInfo)
+		var nodePingInfo = itf.(types.NodePingInfo)
 		return &nodePingInfo
 	}
 	itf, err = io.FromYamlCode(string(code), itfIn)
 	if err == nil {
-		var nodePingInfo types.NodePingInfo = itf.(types.NodePingInfo)
+		var nodePingInfo = itf.(types.NodePingInfo)
 		return &nodePingInfo
 	}
 	itf, err = io.FromXmlCode(string(code), itfIn)
 	if err == nil {
-		var nodePingInfo types.NodePingInfo = itf.(types.NodePingInfo)
+		var nodePingInfo = itf.(types.NodePingInfo)
 		return &nodePingInfo
 	}
-	var parsers []io.FormatParser = make([]io.FormatParser, 0)
+	var parsers = make([]io.FormatParser, 0)
 	if len(parsersCache) > 0 {
 		parsers = parsersCache
 	} else {
@@ -178,7 +179,7 @@ func parseNodePingInfoWithAllFormats(code []byte) *types.NodePingInfo {
 	for _, parser := range parsers {
 		itf, err = parser.Unmashall(code, itfIn)
 		if err == nil {
-			var nodePingInfo types.NodePingInfo = itf.(types.NodePingInfo)
+			var nodePingInfo = itf.(types.NodePingInfo)
 			return &nodePingInfo
 		}
 	}
@@ -189,20 +190,20 @@ func parseServicesWithAllFormats(code []byte) []types.Service {
 	var itfIn = make([]types.Service, 0)
 	itf, err := io.FromJsonCode(string(code), itfIn)
 	if err == nil {
-		var services []types.Service = itf.([]types.Service)
+		var services = itf.([]types.Service)
 		return services
 	}
 	itf, err = io.FromYamlCode(string(code), itfIn)
 	if err == nil {
-		var services []types.Service = itf.([]types.Service)
+		var services = itf.([]types.Service)
 		return services
 	}
 	itf, err = io.FromXmlCode(string(code), itfIn)
 	if err == nil {
-		var services []types.Service = itf.([]types.Service)
+		var services = itf.([]types.Service)
 		return services
 	}
-	var parsers []io.FormatParser = make([]io.FormatParser, 0)
+	var parsers = make([]io.FormatParser, 0)
 	if len(parsersCache) > 0 {
 		parsers = parsersCache
 	} else {
@@ -215,7 +216,7 @@ func parseServicesWithAllFormats(code []byte) []types.Service {
 	for _, parser := range parsers {
 		itf, err = parser.Unmashall(code, itfIn)
 		if err == nil {
-			var services []types.Service = itf.([]types.Service)
+			var services = itf.([]types.Service)
 			return services
 		}
 	}
@@ -226,20 +227,20 @@ func parseNodeInfoWithAllFormats(code []byte) *types.NodeInfo {
 	var itfIn = types.NodeInfo{}
 	itf, err := io.FromJsonCode(string(code), itfIn)
 	if err == nil {
-		var nodeInfo types.NodeInfo = itf.(types.NodeInfo)
+		var nodeInfo = itf.(types.NodeInfo)
 		return &nodeInfo
 	}
 	itf, err = io.FromYamlCode(string(code), itfIn)
 	if err == nil {
-		var nodeInfo types.NodeInfo = itf.(types.NodeInfo)
+		var nodeInfo = itf.(types.NodeInfo)
 		return &nodeInfo
 	}
 	itf, err = io.FromXmlCode(string(code), itfIn)
 	if err == nil {
-		var nodeInfo types.NodeInfo = itf.(types.NodeInfo)
+		var nodeInfo = itf.(types.NodeInfo)
 		return &nodeInfo
 	}
-	var parsers []io.FormatParser = make([]io.FormatParser, 0)
+	var parsers = make([]io.FormatParser, 0)
 	if len(parsersCache) > 0 {
 		parsers = parsersCache
 	} else {
@@ -252,7 +253,7 @@ func parseNodeInfoWithAllFormats(code []byte) *types.NodeInfo {
 	for _, parser := range parsers {
 		itf, err = parser.Unmashall(code, itfIn)
 		if err == nil {
-			var nodeInfo types.NodeInfo = itf.(types.NodeInfo)
+			var nodeInfo = itf.(types.NodeInfo)
 			return &nodeInfo
 		}
 	}

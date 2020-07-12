@@ -3,10 +3,10 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	comm "github.com/hellgate75/go-tcp-common/common"
 	"github.com/hellgate75/go-tcp-common/io"
 	"github.com/hellgate75/go-tcp-common/net/cluster/types"
 	"github.com/hellgate75/go-tcp-common/net/common"
-	comm "github.com/hellgate75/go-tcp-common/common"
 	"os"
 	"plugin"
 	"strings"
@@ -18,13 +18,15 @@ type ServicePlugin interface {
 }
 
 // Describe Proxy Lookup function, expected with name = ServiceDiscovery -> func()([]ServicePlugin)
-type ServiceDiscovery func()([]ServicePlugin, error)
+type ServiceDiscovery func() ([]ServicePlugin, error)
 
+// Default Plugin libraries folder
+var DefaultPluginsFolder = comm.GetCurrentPath() + string(os.PathListSeparator) + "services"
 
-var DefaultPluginsFolder string = comm.GetCurrentPath() + string(os.PathListSeparator) + "services"
-var DefaultLibraryExtension string = comm.GetShareLibExt()
+// Default library file extension
+var DefaultLibraryExtension = comm.GetShareLibExt()
 
-var pluginsList []ServicePlugin = make([]ServicePlugin, 0)
+var pluginsList = make([]ServicePlugin, 0)
 
 //Looks up for plugin by a given ParserFormat, using  eventually pluginsFolder and library exception excluded the dot,
 // in case one of them is empty string it will be replaced with the package DefaultPluginsFolder and DefaultLibraryExtension variables
@@ -32,9 +34,9 @@ func CollectAllPlugins(pluginsFolder string, libExtension string) ([]ServicePlug
 	if len(pluginsList) > 0 {
 		return pluginsList, nil
 	}
-	var out []ServicePlugin = make([]ServicePlugin, 0)
+	var out = make([]ServicePlugin, 0)
 	var err error
-	defer func(){
+	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("net/cluster/plugins.CollectAllPlugins - Unable to connect given nodes, Details: %v", r))
 		}
@@ -45,18 +47,18 @@ func CollectAllPlugins(pluginsFolder string, libExtension string) ([]ServicePlug
 	if "" == libExtension {
 		pluginsFolder = DefaultLibraryExtension
 	}
-	if ! io.ExistsFile(pluginsFolder) {
+	if !io.ExistsFile(pluginsFolder) {
 		return out, errors.New(fmt.Sprintf("net/cluster/plugins.CollectAllPlugins - File %s doesn't exist!!", pluginsFolder))
 	}
 	lext := strings.ToLower(fmt.Sprintf(".%s", libExtension))
 	if io.IsFolder(pluginsFolder) {
-		libraries := io.GetMatchedFiles(pluginsFolder, true, func(path string) bool{
+		libraries := io.GetMatchedFiles(pluginsFolder, true, func(path string) bool {
 			return strings.ToLower(path[len(path)-len(lext):]) == lext
 		})
 		for _, lib := range libraries {
-			plugin, err := plugin.Open(lib)
+			pluginImpl, err := plugin.Open(lib)
 			if err == nil {
-				symbol, err := plugin.Lookup("ServiceDiscovery")
+				symbol, err := pluginImpl.Lookup("ServiceDiscovery")
 				if err == nil {
 					parserPlugin := symbol.(ServiceDiscovery)
 					plugins, err := parserPlugin()
